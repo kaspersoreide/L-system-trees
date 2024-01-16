@@ -1,0 +1,10 @@
+CMakeFiles
+.vscode
+*.vcxproj
+*.filters
+*.sln
+CMakeCache.txt
+cmake_install.cmake
+Win32
+trees.dir
+Debug
