@@ -9,12 +9,18 @@ layout (binding = 0) coherent readonly buffer block1
 
 layout (binding = 1) coherent writeonly buffer block2
 {
-    vec4 vertices[];    //line segments
+    vec4 vertices[];
+};
+
+layout (binding = 2) coherent writeonly buffer block3
+{
+    vec3 normals[];
 };
 
 uniform layout (location = 0) uint stringLength;
 uniform layout (location = 1) float segmentLength;
 uniform layout (location = 2) float turnAngle;
+uniform layout (location = 3) int cylinderSegments;
 
 // found at https://www.neilmendoza.com/glsl-rotation-about-an-arbitrary-axis/
 // rotates counterclockwise hopefully
@@ -63,6 +69,7 @@ struct State {
     float segmentLength;
 };
 
+const float PI = 3.14159265358979323846;
 
 void main() {
     int top = -1;
@@ -105,14 +112,27 @@ void main() {
                 currentState = stateStack[top--];
                 break; 
             default:    // go forward
-                //vertices[2 * i] = vec4(state.xy, 0.0, 1.0);
-                //vec2 forward = vec2(cos(state.z), sin(state.z));
-                //state.xy += state.w * forward;
-                //vertices[2 * i + 1] = vec4(state.xy, 0.0, 1.0);
-                vertices[2 * i] = vec4(currentState.transform[3]);
+                vec3 center0 = (currentState.transform * vec4(0.0, 0.0, 0.0, 1.0)).xyz; 
                 vec3 forward = (currentState.transform * vec4(1.0, 0.0, 0.0, 0.0)).xyz;
                 currentState.transform = translate(currentState.segmentLength * forward) * currentState.transform;
-                vertices[2 * i + 1] = vec4(currentState.transform[3]);
+                vec3 center1 = (currentState.transform * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+                float radius = currentState.segmentLength / 10; 
+                for (int j = 0; j < cylinderSegments; j++) {
+                    float angle0 = j * 2 * PI / cylinderSegments;
+                    float angle1 = (j + 1) * 2 * PI / cylinderSegments;
+                    vec3 r0 = (currentState.transform * vec4(0.0, cos(angle0), sin(angle0), 0.0)).xyz;
+                    vec3 r1 = (currentState.transform * vec4(0.0, cos(angle1), sin(angle1), 0.0)).xyz;
+                    vec4 p0 = vec4(center0 + radius * r0, 1.0);
+                    vec4 p1 = vec4(center0 + radius * r1, 1.0);
+                    vec4 p2 = vec4(center1 + radius * r0, 1.0);
+                    vec4 p3 = vec4(center1 + radius * r1, 1.0);
+                    vertices[cylinderSegments * 6 * i + 6 * j] = p0;
+                    vertices[cylinderSegments * 6 * i + 6 * j + 1] = p1;
+                    vertices[cylinderSegments * 6 * i + 6 * j + 2] = p2;
+                    vertices[cylinderSegments * 6 * i + 6 * j + 3] = p3;
+                    vertices[cylinderSegments * 6 * i + 6 * j + 4] = p1;
+                    vertices[cylinderSegments * 6 * i + 6 * j + 5] = p2;
+                }
                 currentState.segmentLength *= 0.9;
                 break;
         };

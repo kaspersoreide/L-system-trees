@@ -39,6 +39,7 @@ void init() {
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glfwSetKeyCallback(window, keyCallback);
+	glPolygonMode(GL_FRONT, GL_FILL);
 }
 
 void runTests() {
@@ -75,7 +76,7 @@ int main() {
 		glUniformMatrix4fv(0, 1, GL_FALSE, &VP[0][0]);
 
 		glBindVertexArray(tree.VAO);
-		glDrawArrays(GL_LINES, 0, tree.vertexCount);		
+		glDrawArrays(GL_TRIANGLES, 0, tree.vertexCount);		
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
