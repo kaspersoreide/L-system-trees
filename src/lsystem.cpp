@@ -1,6 +1,12 @@
 #include "lsystem.h"
 #include "loadshaders.h"
 
+Lsystem::~Lsystem() {
+    glDeleteBuffers(1, &inputBuffer);
+    glDeleteBuffers(1, &outputBuffer);
+    glDeleteBuffers(1, &productionsBuffer);
+}
+
 void Lsystem::addRule(char in, string out, float probability) {
     rules.push_back({in, out, probability});
 }

@@ -58,7 +58,7 @@ void main() {
     float baseValue = 0.0;
     for (int i = 0; i < N_PRODUCTIONS; i++) {
         if (inputs[i] == input_data[id]) {
-            if (randomValue < baseValue + probabilities[i]) {
+            if (randomValue <= baseValue + probabilities[i]) {
                 stringId = i;
                 break;
             }

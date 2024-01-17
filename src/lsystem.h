@@ -16,6 +16,7 @@ public:
     };
 
     Lsystem() {};
+    ~Lsystem();
     void addRule(char in, string out, float probability);
     void setAxiom(string s);
     void iterate(int n);
