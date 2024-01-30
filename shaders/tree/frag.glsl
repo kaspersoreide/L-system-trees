@@ -1,11 +1,14 @@
 #version 430
 
+in float brightness;
+
 out vec4 color;
 
 void main() {
-    color = vec4(
-        2 * 0.07843137254901960784, 
-        1.0, 
-        2 * 0.02352941176470588235, 
-    1.0);
+    color = brightness * vec4(
+        0.588,
+        0.294,
+        0.1,
+        1.0
+    );
 }
