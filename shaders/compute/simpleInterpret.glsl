@@ -115,12 +115,13 @@ void main() {
                 currentState.segmentLength *= 0.8;
                 break;
             case 76:    // L (BIG L) make leaf
-                float leafLength = 0.2 * currentState.segmentLength;
-                vec3 forward = currentState.transform[0].xyz;
-                vec3 up = currentState.transform[1].xyz;
-                vec3 right = currentState.transform[2].xyz;
-                vec3 p0 = currentState.transform[3].xyz; //current translation = last vector in transform matrix
+                //float leafLength = 0.2 * currentState.segmentLength;
+                //vec3 forward = currentState.transform[0].xyz;
+                //vec3 up = currentState.transform[1].xyz;
+                //vec3 right = currentState.transform[2].xyz;
+                //vec3 p0 = currentState.transform[3].xyz; //current translation = last vector in transform matrix
                 //vec3 p1 = 
+                break;
             default:    // go forward
                 vec3 center0 = (currentState.transform * vec4(0.0, 0.0, 0.0, 1.0)).xyz; 
                 vec3 forward = (currentState.transform * vec4(1.0, 0.0, 0.0, 0.0)).xyz;
