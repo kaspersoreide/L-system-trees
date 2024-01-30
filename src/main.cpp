@@ -13,20 +13,60 @@
 #include "turtle.h"
 #include "loadshaders.h"
 #include "tree.h"
+#include "camera.h"
 
 GLFWwindow* window;
-float cameraAngle = PI / 2;
+Camera camera;
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	switch(key) {
-		case GLFW_KEY_A:
-			cameraAngle += 0.05f;
-			break;
-		case GLFW_KEY_D:
-			cameraAngle -= 0.05f;
-			break;
-		default:
-			break;
+	if (key == GLFW_KEY_E) {
+		if (action == GLFW_PRESS) camera.rot[0] = true;
+		if (action == GLFW_RELEASE) camera.rot[0] = false;
+	}
+	if (key == GLFW_KEY_Q) {
+		if (action == GLFW_PRESS) camera.rot[1] = true;
+		if (action == GLFW_RELEASE) camera.rot[1] = false;
+	}
+	if (key == GLFW_KEY_LEFT) {
+		if (action == GLFW_PRESS) camera.rot[2] = true;
+		if (action == GLFW_RELEASE) camera.rot[2] = false;
+	}
+	if (key == GLFW_KEY_RIGHT) {
+		if (action == GLFW_PRESS) camera.rot[3] = true;
+		if (action == GLFW_RELEASE) camera.rot[3] = false;
+	}
+	if (key == GLFW_KEY_UP) {
+		if (action == GLFW_PRESS) camera.rot[4] = true;
+		if (action == GLFW_RELEASE) camera.rot[4] = false;
+	}
+	if (key == GLFW_KEY_DOWN) {
+		if (action == GLFW_PRESS) camera.rot[5] = true;
+		if (action == GLFW_RELEASE) camera.rot[5] = false;
+	}
+
+	if (key == GLFW_KEY_W) {
+		if (action == GLFW_PRESS) camera.mov[0] = true;
+		if (action == GLFW_RELEASE) camera.mov[0] = false;
+	}
+	if (key == GLFW_KEY_S) {
+		if (action == GLFW_PRESS) camera.mov[1] = true;
+		if (action == GLFW_RELEASE) camera.mov[1] = false;
+	}
+	if (key == GLFW_KEY_A) {
+		if (action == GLFW_PRESS) camera.mov[2] = true;
+		if (action == GLFW_RELEASE) camera.mov[2] = false;
+	}
+	if (key == GLFW_KEY_D) {
+		if (action == GLFW_PRESS) camera.mov[3] = true;
+		if (action == GLFW_RELEASE) camera.mov[3] = false;
+	}
+	if (key == GLFW_KEY_LEFT_SHIFT) {
+		if (action == GLFW_PRESS) camera.mov[4] = true;
+		if (action == GLFW_RELEASE) camera.mov[4] = false;
+	}
+	if (key == GLFW_KEY_LEFT_CONTROL) {
+		if (action == GLFW_PRESS) camera.mov[5] = true;
+		if (action == GLFW_RELEASE) camera.mov[5] = false;
 	}
 }
 
@@ -42,22 +82,10 @@ void init() {
 	glPolygonMode(GL_FRONT, GL_FILL);
 }
 
-void runTests() {
-}
-
-
 int main() {
 	init();
-	runTests();
-
 	
-	float fov = PI * 80.0f / 180;
-	mat4 Projection = perspective(fov, 16.0f / 9, 0.01f, 100.0f);
-	
-
 	GLuint treeShader = loadShaders("shaders/tree/vert.glsl", "shaders/tree/frag.glsl");
-	
-	
 	
 	Tree tree;
 	glLineWidth(1.0f);
@@ -66,14 +94,11 @@ int main() {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		mat4 View = lookAt(
-			vec3(3 * cosf(cameraAngle), 2.0, 3 * sinf(cameraAngle)),
-			vec3(0.0, 2.0, 0.0),
-			vec3(0.0, 1.0, 0.0)
-		);
-		mat4 VP = Projection * View;
+		camera.move();
+		mat4 VP = camera.getVP();
+		mat4 MVP = VP * translate(mat4(1.0f), vec3(0.0f, 0.0f, -8.0f));
 		glUseProgram(treeShader);
-		glUniformMatrix4fv(0, 1, GL_FALSE, &VP[0][0]);
+		glUniformMatrix4fv(0, 1, GL_FALSE, &MVP[0][0]);
 
 		glBindVertexArray(tree.VAO);
 		glDrawArrays(GL_TRIANGLES, 0, tree.vertexCount);		

@@ -60,11 +60,10 @@ void Turtle::buildGPU(GLuint stringBuffer) {
     glBufferData(GL_SHADER_STORAGE_BUFFER, vertexCount * 4 * sizeof(float), NULL, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vertexBuffer);
 
-    /*
-    uniform layout (location = 0) uint stringLength;
-    uniform layout (location = 1) float segmentLength;
-    uniform layout (location = 2) float turnAngle;
-    */
+    glGenBuffers(1, &normalBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, normalBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, vertexCount * 4 * sizeof(float), NULL, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, normalBuffer);
 
     glUniform1ui(0, vertexCount / 2);
     glUniform1f(1, state.step);
@@ -94,5 +93,7 @@ void Turtle::buildGPU(GLuint stringBuffer) {
     glBindVertexArray(VAO);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-
+    glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
 }
