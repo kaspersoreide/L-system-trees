@@ -2,19 +2,24 @@
 
 layout (local_size_x = 1) in;
 
-layout (binding = 0) coherent readonly buffer block1
+layout (binding = 0) coherent readonly buffer block0
 {
     uint string[];
 };
 
-layout (binding = 1) coherent writeonly buffer block2
+layout (binding = 1) coherent writeonly buffer block1
 {
     vec4 vertices[];
 };
 
-layout (binding = 2) coherent writeonly buffer block3
+layout (binding = 2) coherent writeonly buffer block2
 {
     vec4 normals[];
+};
+
+layout (binding = 3) coherent writeonly buffer block3
+{
+    vec4 colors[];
 };
 
 uniform layout (location = 0) uint stringLength;
@@ -64,45 +69,42 @@ mat4 translate(vec3 v) {
     );
 }
 
-struct State {
-    mat4 transform;
-    float segmentLength;
-};
-
 const float PI = 3.14159265358979323846;
 
 void main() {
     int top = -1;
-    State stateStack[32];
-    State currentState;
+    mat4 stateStack[32];
+    mat4 currentState;
     //set initial state pointing upwards (y-axis), because the y axis is always up and trees grow upwards
-    currentState.transform = mat4(
+    currentState = mat4(
         vec4(0.0, 1.0, 0.0, 0.0),
         vec4(1.0, 0.0, 0.0, 0.0),
         vec4(0.0, 0.0, 1.0, 0.0),
         vec4(0.0, 0.0, 0.0, 1.0)
     );
-    currentState.segmentLength = segmentLength;
+    currentState[0] *= segmentLength;
+    currentState[1] *= 0.5 * segmentLength;
+    currentState[2] *= 0.5 * segmentLength;
     
     for (uint i = 0; i < stringLength; i++) {
         switch (string[i]) {
             case 43:    // + turn left
-                currentState.transform = currentState.transform * rotationMatrix(vec3(0.0, 0.0, 1.0), turnAngle);
+                currentState = currentState * rotationMatrix(vec3(0.0, 0.0, 1.0), turnAngle);
                 break;
             case 45:    // - turn right
-                currentState.transform = currentState.transform * rotationMatrix(vec3(0.0, 0.0, 1.0), -turnAngle);
+                currentState = currentState * rotationMatrix(vec3(0.0, 0.0, 1.0), -turnAngle);
                 break;
             case 38:    // & pitch down
-                currentState.transform = currentState.transform * rotationMatrix(vec3(0.0, 1.0, 0.0), turnAngle);
+                currentState = currentState * rotationMatrix(vec3(0.0, 1.0, 0.0), turnAngle);
                 break;
             case 94:    // ^ pitch up
-                currentState.transform = currentState.transform * rotationMatrix(vec3(0.0, 1.0, 0.0), -turnAngle);
+                currentState = currentState * rotationMatrix(vec3(0.0, 1.0, 0.0), -turnAngle);
                 break;
             case 92:    // \ roll left
-                currentState.transform = currentState.transform * rotationMatrix(vec3(1.0, 0.0, 0.0), turnAngle);
+                currentState = currentState * rotationMatrix(vec3(1.0, 0.0, 0.0), turnAngle);
                 break;
             case 47:    // / roll right
-                currentState.transform = currentState.transform * rotationMatrix(vec3(1.0, 0.0, 0.0), -turnAngle);
+                currentState = currentState * rotationMatrix(vec3(1.0, 0.0, 0.0), -turnAngle);
                 break;
             case 91:    // [ push state
                 stateStack[++top] = currentState;
@@ -111,47 +113,49 @@ void main() {
             case 93:    // ] pop state
                 currentState = stateStack[top--];
                 break;
-            case 33:    // ! decrement segment length
-                currentState.segmentLength *= 0.8;
+            case 33:    // ! decrement segment width
+                currentState[2] *= 0.8;
+                currentState[1] *= 0.8;
                 break;
             case 76:    // L (BIG L) make leaf
                 //float leafLength = 0.2 * currentState.segmentLength;
-                //vec3 forward = currentState.transform[0].xyz;
-                //vec3 up = currentState.transform[1].xyz;
-                //vec3 right = currentState.transform[2].xyz;
-                //vec3 p0 = currentState.transform[3].xyz; //current translation = last vector in transform matrix
+                //vec3 forward = currentState[0].xyz;
+                //vec3 up = currentState[1].xyz;
+                //vec3 right = currentState[2].xyz;
+                //vec3 p0 = currentState[3].xyz; //current translation = last vector in transform matrix
                 //vec3 p1 = 
                 break;
             default:    // go forward
-                vec3 center0 = (currentState.transform * vec4(0.0, 0.0, 0.0, 1.0)).xyz; 
-                vec3 forward = (currentState.transform * vec4(1.0, 0.0, 0.0, 0.0)).xyz;
-                currentState.transform = translate(0.2 * forward) * currentState.transform;
-                vec3 center1 = (currentState.transform * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
-                float radius0 = currentState.segmentLength / 10; 
-                currentState.segmentLength *= 0.99;
-                float radius1 = currentState.segmentLength / 10; 
+                vec3 center0 = (currentState[3]).xyz; 
+                vec3 forward = (currentState[0]).xyz;
+                currentState = translate(forward) * currentState;
+                vec3 center1 = (currentState[3]).xyz;
+                currentState[1] *= 0.99;
+                currentState[2] *= 0.99;
                 for (int j = 0; j < cylinderSegments; j++) {
                     uint idx = cylinderSegments * 6 * i + 6 * j;
                     float angle0 = j * 2 * PI / cylinderSegments;
                     float angle1 = (j + 1) * 2 * PI / cylinderSegments;
-                    vec3 r0 = (currentState.transform * vec4(0.0, cos(angle0), sin(angle0), 0.0)).xyz;
-                    vec3 r1 = (currentState.transform * vec4(0.0, cos(angle1), sin(angle1), 0.0)).xyz;
-                    vec4 p0 = vec4(center0 + radius0 * r0, 1.0);
-                    vec4 p1 = vec4(center0 + radius0 * r1, 1.0);
-                    vec4 p2 = vec4(center1 + radius1 * r0, 1.0);
-                    vec4 p3 = vec4(center1 + radius1 * r1, 1.0);
+                    vec3 r0 = (currentState * vec4(0.0, cos(angle0), sin(angle0), 0.0)).xyz;
+                    vec3 r1 = (currentState * vec4(0.0, cos(angle1), sin(angle1), 0.0)).xyz;
+                    vec4 p0 = vec4(center0 + r0, 1.0);
+                    vec4 p1 = vec4(center0 + r1, 1.0);
+                    vec4 p2 = vec4(center1 + r0, 1.0);
+                    vec4 p3 = vec4(center1 + r1, 1.0);
+                    vec4 normal0 = vec4(normalize(r0), 0.0);
+                    vec4 normal1 = vec4(normalize(r1), 0.0);
                     vertices[idx] = p0;
-                    normals[idx] = vec4(r0, 0.0);
+                    normals[idx] = normal0;
                     vertices[idx + 1] = p1;
-                    normals[idx + 1] = vec4(r1, 0.0);
+                    normals[idx + 1] = normal1;
                     vertices[idx + 2] = p2;
-                    normals[idx + 2] = vec4(r0, 0.0);
+                    normals[idx + 2] = normal0;
                     vertices[idx + 3] = p3;
-                    normals[idx + 3] = vec4(r1, 0.0);
+                    normals[idx + 3] = normal1;
                     vertices[idx + 4] = p1;
-                    normals[idx + 4] = vec4(r1, 0.0);
+                    normals[idx + 4] = normal1;
                     vertices[idx + 5] = p2;
-                    normals[idx + 5] = vec4(r0, 0.0);
+                    normals[idx + 5] = normal0;
                 }
                 
                 break;
