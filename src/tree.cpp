@@ -1,18 +1,15 @@
 #include "tree.h"
 #include <iostream>
 
-Tree::Tree() {
-    Tree(22.5f, 0.2, 0.97);
-}
-
 Tree::Tree(float branchAngle, float initialWidth, float widthDecay, int iterations, int type) {
     Lsystem lsystem;
 	//lsystem.addRule('F', "F[++!F]//[++!F]//[^^!F]F", 1.0f);
 	//lsystem.setAxiom("F");
     lsystem.setAxiom("A");
-    lsystem.addRule('A', "[&FL!A]/////#[&FL!A]///////#[&FL!A]", 1.0f);
+    lsystem.addRule('A', "[&F[###^^L]!A]/////#[&F[###^^L]!A]///////#[&F[###^^L]!A]", 1.0f);
     lsystem.addRule('F', "S/////F", 1.0f);
-    lsystem.addRule('S', "F[^^L]", 1.0f);
+    lsystem.addRule('S', "F[###^^L]", 1.0f);
+    //lsystem.addRule('S', "FA", 0.5f);
 
     lsystem.iterate(iterations);
     GLuint stringBuffer;

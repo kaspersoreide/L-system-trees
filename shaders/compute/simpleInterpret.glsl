@@ -124,12 +124,32 @@ void main() {
                 state.colorGradient += 0.04;
                 break;
             case 76:    // L (BIG L) make leaf
-                //float leafLength = 0.2 * currentState.segmentLength;
-                //vec3 forward = currentState[0].xyz;
-                //vec3 up = currentState[1].xyz;
-                //vec3 right = currentState[2].xyz;
-                //vec3 p0 = currentState[3].xyz; 
-                //vec3 p1 = 
+                float leafLength = 0.1;//1 * state.width;
+                vec3 fwd = state.T[0].xyz;
+                vec3 up = state.T[1].xyz;
+                vec3 right = state.T[2].xyz;
+                vec3 p[7];
+                p[0] = state.T[3].xyz; 
+                p[1] = p[0] + leafLength * (fwd + right);
+                p[2] = p[1] + leafLength * (fwd);
+                p[3] = p[2] + leafLength * (fwd - right);
+                p[4] = p[3] + leafLength * (-fwd - right);
+                p[5] = p[4] + leafLength * (-fwd);
+                p[6] = p[0];
+                vec3 middle = 0.5 * (p[0] + p[3]);
+                
+                for (int j = 0; j < 6; j++) {
+                    uint idx = cylinderSegments * 6 * i + 3 * j; 
+                    vertices[idx] = vec4(middle, 1.0);
+                    normals[idx] = vec4(up, 0.0);
+                    colors[idx] = green;
+                    vertices[idx + 1] = vec4(p[j + 1], 1.0);
+                    normals[idx + 1] = vec4(up, 0.0);
+                    colors[idx + 1] = green;
+                    vertices[idx + 2] = vec4(p[j], 1.0);
+                    normals[idx + 2] = vec4(up, 0.0);
+                    colors[idx + 2] = green;
+                }
                 break;
             default:    // go forward
                 state.colorGradient += 0.001;
@@ -137,17 +157,19 @@ void main() {
                 vec3 forward = (state.T[0]).xyz;
                 state.T = translate(0.2 * forward) * state.T;
                 vec3 center1 = (state.T[3]).xyz;
-                state.width *= 0.97;
+                float radius0 = state.width;
+                state.width *= 0.95;
+                float radius1 = state.width;
                 for (int j = 0; j < cylinderSegments; j++) {
                     uint idx = cylinderSegments * 6 * i + 6 * j;
                     float angle0 = j * 2 * PI / cylinderSegments;
                     float angle1 = (j + 1) * 2 * PI / cylinderSegments;
-                    vec3 r0 = state.width * (state.T * vec4(0.0, cos(angle0), sin(angle0), 0.0)).xyz;
-                    vec3 r1 = state.width * (state.T * vec4(0.0, cos(angle1), sin(angle1), 0.0)).xyz;
-                    vec4 p0 = vec4(center0 + r0, 1.0);
-                    vec4 p1 = vec4(center0 + r1, 1.0);
-                    vec4 p2 = vec4(center1 + r0, 1.0);
-                    vec4 p3 = vec4(center1 + r1, 1.0);
+                    vec3 r0 = (state.T * vec4(0.0, cos(angle0), sin(angle0), 0.0)).xyz;
+                    vec3 r1 = (state.T * vec4(0.0, cos(angle1), sin(angle1), 0.0)).xyz;
+                    vec4 p0 = vec4(center0 + radius0 * r0, 1.0);
+                    vec4 p1 = vec4(center0 + radius0 * r1, 1.0);
+                    vec4 p2 = vec4(center1 + radius1 * r0, 1.0);
+                    vec4 p3 = vec4(center1 + radius1 * r1, 1.0);
                     vec4 normal0 = vec4(normalize(r0), 0.0);
                     vec4 normal1 = vec4(normalize(r1), 0.0);
                     vec4 color = mix(brown, green, state.colorGradient);
