@@ -23,7 +23,7 @@ layout (binding = 3) coherent writeonly buffer block3
 };
 
 uniform layout (location = 0) uint stringLength;
-uniform layout (location = 1) float segmentLength;
+uniform layout (location = 1) float branchWidth;
 uniform layout (location = 2) float turnAngle;
 uniform layout (location = 3) int cylinderSegments;
 
@@ -71,91 +71,104 @@ mat4 translate(vec3 v) {
 
 const float PI = 3.14159265358979323846;
 
+struct State {
+    mat4 T;
+    float width;
+    float colorGradient;
+};
+
 void main() {
     int top = -1;
-    mat4 stateStack[32];
-    mat4 currentState;
+    State stateStack[32];
+    State state;
     //set initial state pointing upwards (y-axis), because the y axis is always up and trees grow upwards
-    currentState = mat4(
+    state.T = mat4(
         vec4(0.0, 1.0, 0.0, 0.0),
         vec4(1.0, 0.0, 0.0, 0.0),
         vec4(0.0, 0.0, 1.0, 0.0),
         vec4(0.0, 0.0, 0.0, 1.0)
     );
-    currentState[0] *= segmentLength;
-    currentState[1] *= 0.5 * segmentLength;
-    currentState[2] *= 0.5 * segmentLength;
+    state.width = branchWidth;
+    state.colorGradient = 0.0;
+    vec4 brown = vec4(0.588, 0.294, 0.1, 1.0);
+    vec4 green = vec4(0.0, 1.0, 0.0, 1.0);
     
     for (uint i = 0; i < stringLength; i++) {
         switch (string[i]) {
             case 43:    // + turn left
-                currentState = currentState * rotationMatrix(vec3(0.0, 0.0, 1.0), turnAngle);
+                state.T = state.T * rotationMatrix(vec3(0.0, 0.0, 1.0), turnAngle);
                 break;
             case 45:    // - turn right
-                currentState = currentState * rotationMatrix(vec3(0.0, 0.0, 1.0), -turnAngle);
+                state.T = state.T * rotationMatrix(vec3(0.0, 0.0, 1.0), -turnAngle);
                 break;
             case 38:    // & pitch down
-                currentState = currentState * rotationMatrix(vec3(0.0, 1.0, 0.0), turnAngle);
+                state.T = state.T * rotationMatrix(vec3(0.0, 1.0, 0.0), turnAngle);
                 break;
             case 94:    // ^ pitch up
-                currentState = currentState * rotationMatrix(vec3(0.0, 1.0, 0.0), -turnAngle);
+                state.T = state.T * rotationMatrix(vec3(0.0, 1.0, 0.0), -turnAngle);
                 break;
             case 92:    // \ roll left
-                currentState = currentState * rotationMatrix(vec3(1.0, 0.0, 0.0), turnAngle);
+                state.T = state.T * rotationMatrix(vec3(1.0, 0.0, 0.0), turnAngle);
                 break;
             case 47:    // / roll right
-                currentState = currentState * rotationMatrix(vec3(1.0, 0.0, 0.0), -turnAngle);
+                state.T = state.T * rotationMatrix(vec3(1.0, 0.0, 0.0), -turnAngle);
                 break;
             case 91:    // [ push state
-                stateStack[++top] = currentState;
-                //currentState.segmentLength *= 0.7;
+                stateStack[++top] = state;                
                 break;
             case 93:    // ] pop state
-                currentState = stateStack[top--];
+                state = stateStack[top--];
                 break;
             case 33:    // ! decrement segment width
-                currentState[2] *= 0.8;
-                currentState[1] *= 0.8;
+                state.width *= 0.8;
+                state.colorGradient += 0.04;
                 break;
             case 76:    // L (BIG L) make leaf
                 //float leafLength = 0.2 * currentState.segmentLength;
                 //vec3 forward = currentState[0].xyz;
                 //vec3 up = currentState[1].xyz;
                 //vec3 right = currentState[2].xyz;
-                //vec3 p0 = currentState[3].xyz; //current translation = last vector in transform matrix
+                //vec3 p0 = currentState[3].xyz; 
                 //vec3 p1 = 
                 break;
             default:    // go forward
-                vec3 center0 = (currentState[3]).xyz; 
-                vec3 forward = (currentState[0]).xyz;
-                currentState = translate(forward) * currentState;
-                vec3 center1 = (currentState[3]).xyz;
-                currentState[1] *= 0.99;
-                currentState[2] *= 0.99;
+                state.colorGradient += 0.001;
+                vec3 center0 = (state.T[3]).xyz; 
+                vec3 forward = (state.T[0]).xyz;
+                state.T = translate(0.2 * forward) * state.T;
+                vec3 center1 = (state.T[3]).xyz;
+                state.width *= 0.97;
                 for (int j = 0; j < cylinderSegments; j++) {
                     uint idx = cylinderSegments * 6 * i + 6 * j;
                     float angle0 = j * 2 * PI / cylinderSegments;
                     float angle1 = (j + 1) * 2 * PI / cylinderSegments;
-                    vec3 r0 = (currentState * vec4(0.0, cos(angle0), sin(angle0), 0.0)).xyz;
-                    vec3 r1 = (currentState * vec4(0.0, cos(angle1), sin(angle1), 0.0)).xyz;
+                    vec3 r0 = state.width * (state.T * vec4(0.0, cos(angle0), sin(angle0), 0.0)).xyz;
+                    vec3 r1 = state.width * (state.T * vec4(0.0, cos(angle1), sin(angle1), 0.0)).xyz;
                     vec4 p0 = vec4(center0 + r0, 1.0);
                     vec4 p1 = vec4(center0 + r1, 1.0);
                     vec4 p2 = vec4(center1 + r0, 1.0);
                     vec4 p3 = vec4(center1 + r1, 1.0);
                     vec4 normal0 = vec4(normalize(r0), 0.0);
                     vec4 normal1 = vec4(normalize(r1), 0.0);
+                    vec4 color = mix(brown, green, state.colorGradient);
                     vertices[idx] = p0;
                     normals[idx] = normal0;
+                    colors[idx] = color;
                     vertices[idx + 1] = p1;
                     normals[idx + 1] = normal1;
+                    colors[idx + 1] = color;
                     vertices[idx + 2] = p2;
                     normals[idx + 2] = normal0;
+                    colors[idx + 2] = color;
                     vertices[idx + 3] = p3;
                     normals[idx + 3] = normal1;
+                    colors[idx + 3] = color;
                     vertices[idx + 4] = p1;
                     normals[idx + 4] = normal1;
+                    colors[idx + 4] = color;
                     vertices[idx + 5] = p2;
                     normals[idx + 5] = normal0;
+                    colors[idx + 5] = color;
                 }
                 
                 break;

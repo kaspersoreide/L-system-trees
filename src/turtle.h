@@ -8,10 +8,10 @@ public:
     struct State {
         vec2 pos;
         float angle;
-        float step;
+        float width;
     };
 
-    Turtle(float initialStep, float stepDecay, float rotationAngle);
+    Turtle(float initialWidth, float widthDecay, float rotationAngle);
     void build(string buildString);
     void buildGPU(GLuint stringBuffer);
     void pushState();
@@ -23,5 +23,5 @@ public:
     State state;
     stack<State> stateStack;
     float rotationAngle;
-    float stepDecay;
+    float widthDecay;
 };

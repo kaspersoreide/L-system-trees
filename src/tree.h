@@ -6,5 +6,6 @@
 class Tree {
 public:
     Tree();
+    Tree(float branchAngle, float initialWidth, float widthDecay, int iterations = 5, int type = 0);
     GLuint VAO, vertexCount;
 };
