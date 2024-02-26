@@ -1,10 +1,10 @@
 #include "turtle.h"
 #include "loadshaders.h"
 
-Turtle::Turtle(float initialStep, float _stepDecay, float angle) {
-    state = {vec2(0.0f, 0.0f), 1.57079632679489661923f, initialStep};
+Turtle::Turtle(float initialWidth, float _widthDecay, float angle) {
+    state = {vec2(0.0f, 0.0f), 1.57079632679489661923f, initialWidth};
     rotationAngle = angle;
-    stepDecay = _stepDecay;
+    widthDecay = _widthDecay;
 }
 
 void Turtle::pushState() {
@@ -21,7 +21,7 @@ void Turtle::build(string buildString) {
         switch (buildString[i]) {
             case '[':
                 pushState();
-                state.step *= 1.0f - stepDecay;
+                state.width *= 1.0f - widthDecay;
                 break;
             case ']':
                 popState();
@@ -35,7 +35,7 @@ void Turtle::build(string buildString) {
             default:
                 vec2 dir = {cosf(state.angle), sinf(state.angle)};
                 vertices.push_back(state.pos);
-                state.pos += state.step * dir;
+                state.pos += state.width * dir;
                 vertices.push_back(state.pos);
                 break;
         }
@@ -54,7 +54,7 @@ void Turtle::buildGPU(GLuint stringBuffer) {
     vertexCount = 6 * cylinderSegments * bufferSize / sizeof(GLuint);  //TODO: this is too big, only need a line segment every time turtle moves
     
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, stringBuffer);
-    GLuint vertexBuffer, normalBuffer;
+    GLuint vertexBuffer, normalBuffer, colorBuffer;
     glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexBuffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, vertexCount * 4 * sizeof(float), NULL, GL_STATIC_DRAW);
@@ -65,8 +65,13 @@ void Turtle::buildGPU(GLuint stringBuffer) {
     glBufferData(GL_SHADER_STORAGE_BUFFER, vertexCount * 4 * sizeof(float), NULL, GL_STATIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, normalBuffer);
 
+    glGenBuffers(1, &colorBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, colorBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, vertexCount * 4 * sizeof(float), NULL, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, colorBuffer);
+
     glUniform1ui(0, vertexCount / 2);
-    glUniform1f(1, state.step);
+    glUniform1f(1, state.width);
     glUniform1f(2, rotationAngle);
     glUniform1i(3, cylinderSegments);
     glDispatchCompute(1, 1, 1);
@@ -88,12 +93,15 @@ void Turtle::buildGPU(GLuint stringBuffer) {
     */
     
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
     glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, 0);
 }
