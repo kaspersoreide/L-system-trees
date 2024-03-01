@@ -92,7 +92,7 @@ void main() {
     state.colorGradient = 0.0;
     vec4 brown = vec4(0.588, 0.294, 0.1, 1.0);
     vec4 green = vec4(0.0, 1.0, 0.0, 1.0);
-    
+    uint idx = 0;   //vertex array index
     for (uint i = 0; i < stringLength; i++) {
         switch (string[i]) {
             case 43:    // + turn left
@@ -139,16 +139,17 @@ void main() {
                 vec3 middle = 0.5 * (p[0] + p[3]);
                 
                 for (int j = 0; j < 6; j++) {
-                    uint idx = cylinderSegments * 6 * i + 3 * j; 
                     vertices[idx] = vec4(middle, 1.0);
                     normals[idx] = vec4(up, 0.0);
-                    colors[idx] = green;
-                    vertices[idx + 1] = vec4(p[j + 1], 1.0);
-                    normals[idx + 1] = vec4(up, 0.0);
-                    colors[idx + 1] = green;
-                    vertices[idx + 2] = vec4(p[j], 1.0);
-                    normals[idx + 2] = vec4(up, 0.0);
-                    colors[idx + 2] = green;
+                    colors[idx++] = green;
+
+                    vertices[idx] = vec4(p[j + 1], 1.0);
+                    normals[idx] = vec4(up, 0.0);
+                    colors[idx++] = green;
+
+                    vertices[idx] = vec4(p[j], 1.0);
+                    normals[idx] = vec4(up, 0.0);
+                    colors[idx++] = green;
                 }
                 break;
             default:    // go forward
@@ -161,7 +162,6 @@ void main() {
                 state.width *= 0.95;
                 float radius1 = state.width;
                 for (int j = 0; j < cylinderSegments; j++) {
-                    uint idx = cylinderSegments * 6 * i + 6 * j;
                     float angle0 = j * 2 * PI / cylinderSegments;
                     float angle1 = (j + 1) * 2 * PI / cylinderSegments;
                     vec3 r0 = (state.T * vec4(0.0, cos(angle0), sin(angle0), 0.0)).xyz;
@@ -173,24 +173,30 @@ void main() {
                     vec4 normal0 = vec4(normalize(r0), 0.0);
                     vec4 normal1 = vec4(normalize(r1), 0.0);
                     vec4 color = mix(brown, green, state.colorGradient);
+
                     vertices[idx] = p0;
                     normals[idx] = normal0;
-                    colors[idx] = color;
-                    vertices[idx + 1] = p1;
-                    normals[idx + 1] = normal1;
-                    colors[idx + 1] = color;
-                    vertices[idx + 2] = p2;
-                    normals[idx + 2] = normal0;
-                    colors[idx + 2] = color;
-                    vertices[idx + 3] = p3;
-                    normals[idx + 3] = normal1;
-                    colors[idx + 3] = color;
-                    vertices[idx + 4] = p1;
-                    normals[idx + 4] = normal1;
-                    colors[idx + 4] = color;
-                    vertices[idx + 5] = p2;
-                    normals[idx + 5] = normal0;
-                    colors[idx + 5] = color;
+                    colors[idx++] = color;
+
+                    vertices[idx] = p1;
+                    normals[idx] = normal1;
+                    colors[idx++] = color;
+
+                    vertices[idx] = p2;
+                    normals[idx] = normal0;
+                    colors[idx++] = color;
+
+                    vertices[idx] = p3;
+                    normals[idx] = normal1;
+                    colors[idx++] = color;
+
+                    vertices[idx] = p1;
+                    normals[idx] = normal1;
+                    colors[idx++] = color;
+
+                    vertices[idx] = p2;
+                    normals[idx] = normal0;
+                    colors[idx++] = color;
                 }
                 
                 break;

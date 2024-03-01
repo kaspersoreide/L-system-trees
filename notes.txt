@@ -1,0 +1,3 @@
+IDEA:
+Write transform matrix into a buffer, along with 4 control points in simpleInterpret.glsl
+Then, a different shader executes a geometry generation step in parallell using splines

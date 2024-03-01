@@ -88,7 +88,7 @@ int main() {
 	GLuint treeShader = loadShaders("shaders/tree/vert.glsl", "shaders/tree/frag.glsl");
 	
 	Tree tree(22.5f, 0.2, 0.97, 5, 0);
-	
+
 	while (!glfwWindowShouldClose(window)) {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
