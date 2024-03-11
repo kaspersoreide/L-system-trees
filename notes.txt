@@ -1,3 +1,22 @@
 IDEA:
 Write transform matrix into a buffer, along with 4 control points in simpleInterpret.glsl
 Then, a different shader executes a geometry generation step in parallell using splines
+
+use this maybe?
+https://math.stackexchange.com/questions/2843307/getting-consistent-normals-along-a-3d-bezier-curve
+
+
+
+Impostor-ish idea? based on true impostors from GPU gems 3
+- store each tree as a buffer filled with control points.
+- use a bounding box (or just a square?) when rendering tree.
+- fragment shader does the heavy lifting:
+    - ray marching by finding closest control points, then using spline function to get distance to closest spline
+    - shader needs to know branch width for a given spline
+    - how to do efficiently? checking all control points is intensive.
+        - Use a DAG to store the whole tree
+        - traverse the DAG to find closest point but use a heuristic that is a function of:
+            - distance to spline from ray point
+            - are children closer than parent node?
+            - dot product of ray direction and spline tangent (growing direction of branch)
+    - compute bounding box in the same shader and store it in the buffer
