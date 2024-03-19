@@ -10,30 +10,21 @@ layout (binding = 0) coherent readonly buffer block0
 struct Node {
     uint idx;
     uint parent;
-    uvec4 children;
-    mat4 transform;
+    uvec4 children;     //max 4 children
+    vec4 pos;
     float width;
-}
+};
 
 layout (binding = 1) coherent writeonly buffer block1
 {
     uint lastIdx;   //index of last node in buffer
-    float x_min;
-    float x_max;
-    float y_min;
-    float y_max;
-    float z_min;
-    float z_max;
     Node tree[];   
 };
 
-/*
-layout (binding = 1) coherent writeonly buffer block3
+layout (binding = 2) coherent writeonly buffer block2
 {
-    int numLeaves;
-    mat4 leafModels[];   
-};
-*/
+    vec4 boxVertices[36];   //6 vertices per face, 6 faces
+}
 
 uniform layout (location = 0) uint stringLength;
 uniform layout (location = 1) float branchWidth;
@@ -84,48 +75,62 @@ mat4 translate(vec3 v) {
 
 const float PI = 3.14159265358979323846;
 
+struct State {
+    mat4 transform;
+    float width;
+    uint treeIdx;
+}
+
 void main() {
+    vec3 boxMin = vec3(0);
+    vec3 boxMax = vec3(0);
     int top = -1;
-    uint stack[16];
+    State stack[16];
     uint idx = 0;
+    State currentState;
     //set initial state pointing upwards (y-axis), because the y axis is always up and trees grow upwards
-    tree[idx].transform = mat4(
+    currentState.transform = mat4(
         vec4(0.0, 1.0, 0.0, 0.0),
         vec4(1.0, 0.0, 0.0, 0.0),
         vec4(0.0, 0.0, 1.0, 0.0),
         vec4(0.0, 0.0, 0.0, 1.0)
     );
+    currentState.treeIdx = idx;
+    currentState.width = branchWidth;
+    tree[idx].pos = vec4(0.0, 0.0, 0.0, 1.0);
     tree[idx].width = branchWidth;
     tree[idx].parent = 0;
-
+    tree[idx].children = uvec4(0);
+    lastIdx = 0;
     for (uint i = 0; i < stringLength; i++) {
         switch (string[i]) {
             case 43:    // + turn left
-                tree[idx].transform = tree[idx].transform * rotationMatrix(vec3(0.0, 0.0, 1.0), turnAngle);
+                currentState.transform = currentState.transform * rotationMatrix(vec3(0.0, 0.0, 1.0), turnAngle);
                 break;
             case 45:    // - turn right
-                tree[idx].transform = tree[idx].transform * rotationMatrix(vec3(0.0, 0.0, 1.0), -turnAngle);
+                currentState.transform = currentState.transform * rotationMatrix(vec3(0.0, 0.0, 1.0), -turnAngle);
                 break;
             case 38:    // & pitch down
-                tree[idx].transform = tree[idx].transform * rotationMatrix(vec3(0.0, 1.0, 0.0), turnAngle);
+                currentState.transform = currentState.transform * rotationMatrix(vec3(0.0, 1.0, 0.0), turnAngle);
                 break;
             case 94:    // ^ pitch up
-                tree[idx].transform = tree[idx].transform * rotationMatrix(vec3(0.0, 1.0, 0.0), -turnAngle);
+                currentState.transform = currentState.transform * rotationMatrix(vec3(0.0, 1.0, 0.0), -turnAngle);
                 break;
             case 92:    // \ roll left
-                tree[idx].transform = tree[idx].transform * rotationMatrix(vec3(1.0, 0.0, 0.0), turnAngle);
+                currentState.transform = currentState.transform * rotationMatrix(vec3(1.0, 0.0, 0.0), turnAngle);
                 break;
             case 47:    // / roll right
-                tree[idx].transform = tree[idx].transform * rotationMatrix(vec3(1.0, 0.0, 0.0), -turnAngle);
+                currentState.transform = currentState.transform * rotationMatrix(vec3(1.0, 0.0, 0.0), -turnAngle);
                 break;
             case 91:    // [ push state
-                stack[++top] = idx;              
+                stack[++top] = currentState;              
                 break;
             case 93:    // ] pop state
-                idx = stateStack[top--];
+                currentState = stack[top--];
+                idx = currentState.treeIdx;
                 break;
             case 33:    // ! decrement segment width
-                tree[idx].width *= 0.8;
+                currentState.width *= 0.8;
                 break;
             case 76:    // L (BIG L) make leaf
 
@@ -134,8 +139,92 @@ void main() {
                 //check child list for available entry
                 //create child node, set parent and other data
                 //increment lastIdx
-                
+                lastIdx++;
+                vec3 dir = currentState.transform[0].xyz;
+                currentState.transform = translate(0.2 * dir) * currentState.transform;
+                tree[lastIdx].pos = currentState.transform[3];
+                tree[lastIdx].parent = idx;
+                tree[lastIdx].width = currentState.width;
+                for (int i = 0; i < 4; i++) {
+                    if (tree[idx].children[i] != 0) {
+                        tree[idx].children[i] = lastIdx;
+                        break;
+                    }
+                }
+                idx = lastIdx;
+                //update bounding box bounds
+                for (int j = 0; j < 3; j++) {
+                    if (tree[idx].pos[j] < boxMin[j]) boxMin[j] = tree[idx].pos[j];
+                    if (tree[idx].pos[j] > boxMax[j]) boxMax[j] = tree[idx].pos[j];
+                }
                 break;
         };
     }
+    //write bounding box buffer data
+    uint boxIdx = 0;
+    vec4 c00 = vec4(boxMin.x, boxMin.y, boxMin.z, 1.0);
+    vec4 c01 = vec4(boxMin.x, boxMax.y, boxMin.z, 1.0);
+    vec4 c10 = vec4(boxMax.x, boxMin.y, boxMin.z, 1.0);
+    vec4 c11 = vec4(boxMax.x, boxMax.y, boxMin.z, 1.0); 
+    boxVertices[boxIdx++] = c00;
+    boxVertices[boxIdx++] = c01;
+    boxVertices[boxIdx++] = c10;
+    boxVertices[boxIdx++] = c10;
+    boxVertices[boxIdx++] = c01;
+    boxVertices[boxIdx++] = c11;
+
+    c00 = vec4(boxMin.x, boxMin.y, boxMax.z, 1.0);
+    c01 = vec4(boxMin.x, boxMax.y, boxMax.z, 1.0);
+    c10 = vec4(boxMax.x, boxMin.y, boxMax.z, 1.0);
+    c11 = vec4(boxMax.x, boxMax.y, boxMax.z, 1.0); 
+    boxVertices[boxIdx++] = c00;
+    boxVertices[boxIdx++] = c01;
+    boxVertices[boxIdx++] = c10;
+    boxVertices[boxIdx++] = c10;
+    boxVertices[boxIdx++] = c01;
+    boxVertices[boxIdx++] = c11;
+
+    c00 = vec4(boxMin.x, boxMin.y, boxMin.z 1.0);
+    c01 = vec4(boxMin.x, boxMin.y, boxMax.z 1.0);
+    c10 = vec4(boxMin.x, boxMax.y, boxMin.z 1.0);
+    c11 = vec4(boxMin.x, boxMax.y, boxMax.z 1.0); 
+    boxVertices[boxIdx++] = c00;
+    boxVertices[boxIdx++] = c01;
+    boxVertices[boxIdx++] = c10;
+    boxVertices[boxIdx++] = c10;
+    boxVertices[boxIdx++] = c01;
+    boxVertices[boxIdx++] = c11;
+
+    c00 = vec4(boxMax.x, boxMin.y, boxMin.z, 1.0);
+    c01 = vec4(boxMax.x, boxMin.y, boxMax.z, 1.0);
+    c10 = vec4(boxMax.x, boxMax.y, boxMin.z, 1.0);
+    c11 = vec4(boxMax.x, boxMax.y, boxMax.z, 1.0); 
+    boxVertices[boxIdx++] = c00;
+    boxVertices[boxIdx++] = c01;
+    boxVertices[boxIdx++] = c10;
+    boxVertices[boxIdx++] = c10;
+    boxVertices[boxIdx++] = c01;
+    boxVertices[boxIdx++] = c11;
+
+    c00 = vec4(boxMin.x, boxMin.y, boxMin.z, 1.0);
+    c01 = vec4(boxMin.x, boxMin.y, boxMax.z, 1.0);
+    c10 = vec4(boxMax.x, boxMin.y, boxMin.z, 1.0);
+    c11 = vec4(boxMax.x, boxMin.y, boxMax.z, 1.0); 
+    boxVertices[boxIdx++] = c00;
+    boxVertices[boxIdx++] = c01;
+    boxVertices[boxIdx++] = c10;
+    boxVertices[boxIdx++] = c10;
+    boxVertices[boxIdx++] = c01;
+    boxVertices[boxIdx++] = c11;
+
+    c00 = vec4(boxMin.x, boxMax.y, boxMin.z, 1.0);
+    c01 = vec4(boxMin.x, boxMax.y, boxMax.z, 1.0);
+    c10 = vec4(boxMax.x, boxMax.y, boxMin.z, 1.0);
+    c11 = vec4(boxMax.x, boxMax.y, boxMax.z, 1.0); 
+    boxVertices[boxIdx++] = c00;
+    boxVertices[boxIdx++] = c01;
+    boxVertices[boxIdx++] = c10;
+    boxVertices[boxIdx++] = c10;
+    boxVertices[boxIdx++] = c01;
+    boxVertices[boxIdx++] = c11;
 }

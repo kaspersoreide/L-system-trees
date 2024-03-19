@@ -18,7 +18,7 @@ public:
     void popState();
 
     vector<vec2> vertices; //line points for GL_LINES
-    GLuint VAO, vertexCount;
+    GLuint treeBuffer, boxVAO;
 
     State state;
     stack<State> stateStack;

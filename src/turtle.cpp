@@ -50,24 +50,19 @@ void Turtle::buildGPU(GLuint stringBuffer, int cylinderSegments, int nSegments, 
     GLint bufferSize;
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, stringBuffer);
     glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &bufferSize);
-    vertexCount = 6 * cylinderSegments * nSegments + 6 * 3 * nLeaves;
     
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, stringBuffer);
-    GLuint vertexBuffer, normalBuffer, colorBuffer;
-    glGenBuffers(1, &vertexBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, vertexBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, vertexCount * 4 * sizeof(float), NULL, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vertexBuffer);
 
-    glGenBuffers(1, &normalBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, normalBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, vertexCount * 4 * sizeof(float), NULL, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, normalBuffer);
+    glGenBuffers(1, &treeBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, treeBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, NULL, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, treeBuffer);
 
-    glGenBuffers(1, &colorBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, colorBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, vertexCount * 4 * sizeof(float), NULL, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, colorBuffer);
+    GLuint boxVBO;
+    glGenBuffers(1, &boxVBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, boxVBO);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 36 * 4 * sizeof(float), NULL, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, boxVBO);
 
     glUniform1ui(0, bufferSize / sizeof(GLuint)); //string size (number of characters)
     glUniform1f(1, state.width);
@@ -92,15 +87,9 @@ void Turtle::buildGPU(GLuint stringBuffer, int cylinderSegments, int nSegments, 
     */
     
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glGenVertexArrays(1, &boxVAO);
+    glBindVertexArray(boxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, boxVBO);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, 0);
 }
