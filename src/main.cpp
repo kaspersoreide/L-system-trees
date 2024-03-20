@@ -79,15 +79,15 @@ void init() {
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glfwSetKeyCallback(window, keyCallback);
-	glPolygonMode(GL_FRONT, GL_FILL);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 int main() {
 	init();
 	
-	GLuint treeShader = loadShaders("shaders/tree/vert.glsl", "shaders/tree/frag.glsl");
+	GLuint treeShader = loadShaders("shaders/tree/boxvert.glsl", "shaders/tree/raycaster.glsl");
 	
-	Tree tree(22.5f, 0.2, 0.97, 5, 0);
+	Tree tree(22.5f, 0.2, 0.97, 3, 0);
 
 	while (!glfwWindowShouldClose(window)) {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -95,12 +95,18 @@ int main() {
 
 		camera.move();
 		mat4 VP = camera.getVP();
-		mat4 MVP = VP * translate(mat4(1.0f), vec3(0.0f, 0.0f, -8.0f));
+		mat4 Model = translate(mat4(1.0f), vec3(0.0f, 0.0f, -8.0f));
+		mat4 MVP = VP * Model;
 		glUseProgram(treeShader);
-		glUniformMatrix4fv(0, 1, GL_FALSE, &MVP[0][0]);
+		glUniformMatrix4fv(0, 1, GL_FALSE, value_ptr(Model));
+		glUniformMatrix4fv(1, 1, GL_FALSE, value_ptr(MVP));
+		vec3 camPos = camera.getPos();
+		glUniform3fv(2, 1, value_ptr(camPos));
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, tree.turtle->treeBuffer);
+    	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, tree.turtle->treeBuffer);
 
-		glBindVertexArray(tree.VAO);
-		glDrawArrays(GL_TRIANGLES, 0, tree.vertexCount);		
+		glBindVertexArray(tree.turtle->boxVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);		
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

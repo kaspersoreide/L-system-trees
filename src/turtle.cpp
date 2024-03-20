@@ -44,25 +44,26 @@ void Turtle::build(string buildString) {
 }
     
 
-void Turtle::buildGPU(GLuint stringBuffer, int cylinderSegments, int nSegments, int nLeaves) {
+void Turtle::buildGPU(GLuint stringBuffer, int cylinderSegments) {
     GLuint treeBuildingShader = loadComputeShader("shaders/compute/simpleInterpret.glsl");
     glUseProgram(treeBuildingShader);
+
     GLint bufferSize;
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, stringBuffer);
     glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &bufferSize);
-    
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, stringBuffer);
 
     glGenBuffers(1, &treeBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, treeBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, NULL, GL_STATIC_DRAW);
+    //TODO: properly set size of treeBuffer
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 2 * bufferSize, NULL, GL_STATIC_DRAW); 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, treeBuffer);
 
     GLuint boxVBO;
     glGenBuffers(1, &boxVBO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, boxVBO);
     glBufferData(GL_SHADER_STORAGE_BUFFER, 36 * 4 * sizeof(float), NULL, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, boxVBO);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, boxVBO);
 
     glUniform1ui(0, bufferSize / sizeof(GLuint)); //string size (number of characters)
     glUniform1f(1, state.width);
@@ -71,9 +72,8 @@ void Turtle::buildGPU(GLuint stringBuffer, int cylinderSegments, int nSegments, 
     glDispatchCompute(1, 1, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-    /*
     //print
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, VBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, treeBuffer);
     //int outputSize;
     //glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &outputSize);
     vector<float> testSum;
@@ -84,7 +84,6 @@ void Turtle::buildGPU(GLuint stringBuffer, int cylinderSegments, int nSegments, 
     for (int i = 0; i < testSum.size(); i++) {
         cout << ", " << testSum[i];
     }
-    */
     
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     glGenVertexArrays(1, &boxVAO);

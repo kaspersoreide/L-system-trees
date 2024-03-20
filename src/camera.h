@@ -10,6 +10,7 @@ public:
 	mat4 getModel() { return Model; }
 	mat4 getView();
 	mat4 getVP();
+	vec3 getPos() { return pos; }
 	bool rot[6], mov[6];
 private:
 	mat4 Model, Projection;

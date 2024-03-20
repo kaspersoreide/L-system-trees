@@ -15,7 +15,7 @@ struct Node {
     float width;
 };
 
-layout (binding = 1) coherent writeonly buffer block1
+layout (binding = 1) coherent buffer block1
 {
     uint lastIdx;   //index of last node in buffer
     Node tree[];   
@@ -24,7 +24,7 @@ layout (binding = 1) coherent writeonly buffer block1
 layout (binding = 2) coherent writeonly buffer block2
 {
     vec4 boxVertices[36];   //6 vertices per face, 6 faces
-}
+};
 
 uniform layout (location = 0) uint stringLength;
 uniform layout (location = 1) float branchWidth;
@@ -79,11 +79,11 @@ struct State {
     mat4 transform;
     float width;
     uint treeIdx;
-}
+};
 
 void main() {
-    vec3 boxMin = vec3(0);
-    vec3 boxMax = vec3(0);
+    vec3 boxMin = vec3(1000000.0);
+    vec3 boxMax = vec3(-10000000.0);
     int top = -1;
     State stack[16];
     uint idx = 0;
@@ -184,16 +184,16 @@ void main() {
     boxVertices[boxIdx++] = c01;
     boxVertices[boxIdx++] = c11;
 
-    c00 = vec4(boxMin.x, boxMin.y, boxMin.z 1.0);
-    c01 = vec4(boxMin.x, boxMin.y, boxMax.z 1.0);
-    c10 = vec4(boxMin.x, boxMax.y, boxMin.z 1.0);
-    c11 = vec4(boxMin.x, boxMax.y, boxMax.z 1.0); 
+    c00 = vec4(boxMin.x, boxMin.y, boxMin.z, 1.0);
+    c01 = vec4(boxMin.x, boxMin.y, boxMax.z, 1.0);
+    c10 = vec4(boxMin.x, boxMax.y, boxMin.z, 1.0);
+    c11 = vec4(boxMin.x, boxMax.y, boxMax.z, 1.0); 
     boxVertices[boxIdx++] = c00;
     boxVertices[boxIdx++] = c01;
     boxVertices[boxIdx++] = c10;
     boxVertices[boxIdx++] = c10;
     boxVertices[boxIdx++] = c01;
-    boxVertices[boxIdx++] = c11;
+    boxVertices[boxIdx++] = c11; 
 
     c00 = vec4(boxMax.x, boxMin.y, boxMin.z, 1.0);
     c01 = vec4(boxMax.x, boxMin.y, boxMax.z, 1.0);
