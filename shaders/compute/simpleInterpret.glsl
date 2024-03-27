@@ -21,10 +21,12 @@ layout (binding = 1) coherent buffer block1
     Node tree[];   
 };
 
+/*
 layout (binding = 2) coherent writeonly buffer block2
 {
     vec4 boxVertices[36];   //6 vertices per face, 6 faces
 };
+*/
 
 uniform layout (location = 0) uint stringLength;
 uniform layout (location = 1) float branchWidth;
@@ -82,8 +84,8 @@ struct State {
 };
 
 void main() {
-    vec3 boxMin = vec3(1000000.0);
-    vec3 boxMax = vec3(-10000000.0);
+    vec3 boxMin = vec3(0.0);
+    vec3 boxMax = vec3(0.0);
     int top = -1;
     State stack[16];
     uint idx = 0;
@@ -145,22 +147,26 @@ void main() {
                 tree[lastIdx].pos = currentState.transform[3];
                 tree[lastIdx].parent = idx;
                 tree[lastIdx].width = currentState.width;
+                tree[lastIdx].children = uvec4(0);
                 for (int i = 0; i < 4; i++) {
-                    if (tree[idx].children[i] != 0) {
+                    if (tree[idx].children[i] == 0) {
                         tree[idx].children[i] = lastIdx;
                         break;
                     }
                 }
                 idx = lastIdx;
                 //update bounding box bounds
+                /*
                 for (int j = 0; j < 3; j++) {
-                    if (tree[idx].pos[j] < boxMin[j]) boxMin[j] = tree[idx].pos[j];
-                    if (tree[idx].pos[j] > boxMax[j]) boxMax[j] = tree[idx].pos[j];
+                    if (tree[idx].pos[j] < boxMin[j]) boxMin[j] = tree[idx].pos[j] - tree[idx].width;
+                    if (tree[idx].pos[j] > boxMax[j]) boxMax[j] = tree[idx].pos[j] + tree[idx].width;
                 }
+                */
                 break;
         };
     }
     //write bounding box buffer data
+    /*
     uint boxIdx = 0;
     vec4 c00 = vec4(boxMin.x, boxMin.y, boxMin.z, 1.0);
     vec4 c01 = vec4(boxMin.x, boxMax.y, boxMin.z, 1.0);
@@ -227,4 +233,5 @@ void main() {
     boxVertices[boxIdx++] = c10;
     boxVertices[boxIdx++] = c01;
     boxVertices[boxIdx++] = c11;
+    */
 }

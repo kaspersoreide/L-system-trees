@@ -87,7 +87,7 @@ int main() {
 	
 	GLuint treeShader = loadShaders("shaders/tree/boxvert.glsl", "shaders/tree/raycaster.glsl");
 	
-	Tree tree(22.5f, 0.2, 0.97, 3, 0);
+	Tree tree(22.5f, 0.05, 0.97, 3, 0);
 
 	while (!glfwWindowShouldClose(window)) {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -97,16 +97,7 @@ int main() {
 		mat4 VP = camera.getVP();
 		mat4 Model = translate(mat4(1.0f), vec3(0.0f, 0.0f, -8.0f));
 		mat4 MVP = VP * Model;
-		glUseProgram(treeShader);
-		glUniformMatrix4fv(0, 1, GL_FALSE, value_ptr(Model));
-		glUniformMatrix4fv(1, 1, GL_FALSE, value_ptr(MVP));
-		vec3 camPos = camera.getPos();
-		glUniform3fv(2, 1, value_ptr(camPos));
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, tree.turtle->treeBuffer);
-    	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, tree.turtle->treeBuffer);
-
-		glBindVertexArray(tree.turtle->boxVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);		
+		tree.render(treeShader, Model, MVP, camera.getPos());
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

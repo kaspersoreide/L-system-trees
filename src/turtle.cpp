@@ -71,7 +71,7 @@ void Turtle::buildGPU(GLuint stringBuffer, int cylinderSegments) {
     glUniform1i(3, cylinderSegments);
     glDispatchCompute(1, 1, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
+    /*
     //print
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, treeBuffer);
     //int outputSize;
@@ -84,6 +84,7 @@ void Turtle::buildGPU(GLuint stringBuffer, int cylinderSegments) {
     for (int i = 0; i < testSum.size(); i++) {
         cout << ", " << testSum[i];
     }
+    */
     
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     glGenVertexArrays(1, &boxVAO);
