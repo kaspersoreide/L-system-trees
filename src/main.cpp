@@ -87,7 +87,7 @@ int main() {
 	
 	GLuint treeShader = loadShaders("shaders/tree/boxvert.glsl", "shaders/tree/raycaster.glsl");
 	
-	Tree tree(22.5f, 0.05, 0.97, 3, 0);
+	Tree tree(25.7f, 0.05, 0.97, 5, 0);
 
 	while (!glfwWindowShouldClose(window)) {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);

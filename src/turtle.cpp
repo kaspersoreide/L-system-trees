@@ -69,6 +69,7 @@ void Turtle::buildGPU(GLuint stringBuffer, int cylinderSegments) {
     glUniform1f(1, state.width);
     glUniform1f(2, rotationAngle);
     glUniform1i(3, cylinderSegments);
+    glUniform1f(4, 0.2f);
     glDispatchCompute(1, 1, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     /*
