@@ -10,7 +10,7 @@ Tree::Tree(float branchAngle, float initialWidth, float widthDecay, int iteratio
     //lsystem->addRule('F', "S/////F", 1.0f);
     //lsystem->addRule('S', "F[###^^L]", 1.0f);
     //lsystem.addRule('S', "FA", 0.5f);
-    lsystem->addRule('F', "F[+!/F]F[-!/F]F", 1.0f);
+    lsystem->addRule('F', "F[+!/F]/^F[-!/F]/^F", 1.0f);
 	lsystem->setAxiom("F");
 
     lsystem->iterate(iterations);

@@ -35,8 +35,8 @@ void main() {
     uint idx = gl_GlobalInvocationID.x + 1;
     vec3 p1 = tree[idx].pos.xyz;
     vec3 p0 = tree[tree[idx].parent].pos.xyz;
-    float w1 = 1.1 * tree[idx].width;
-    float w0 = 1.1 * tree[tree[idx].parent].width; 
+    float w1 = 1.5 * tree[idx].width;
+    float w0 = 1.5 * tree[tree[idx].parent].width; 
     //construct orthonormal frame u, v, w. 
     vec3 u = normalize(p1 - p0);
     vec3 v = normalize(cross(u, u.yzx));   //this is not proven but seems to work
