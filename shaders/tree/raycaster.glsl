@@ -2,6 +2,12 @@
 
 in vec3 worldPos;
 flat in uint treeIdx;
+in float t_guess;
+flat in vec3 nodeWorldPos;
+flat in vec3 parentWorldPos;
+flat in vec3 dir;
+flat in vec3 parentDir;
+
 out vec4 FragColor;
 
 uniform layout(location = 0) mat4 Model;
@@ -90,18 +96,7 @@ vec3 quadraticSpline(vec3 a, vec3 b, vec3 c, float t) {
     vec3 bc = mix(b, c, t);
     return mix(ab, bc, t);
 }
-
-vec3 getParentDir(uint idx) {
-    uint pIdx = tree[idx].parent;
-    if (pIdx != 0) {
-        vec3 p1 = tree[pIdx].pos.xyz;
-        vec3 p0 = tree[tree[pIdx].parent].pos.xyz;
-        return normalize(p1 - p0);
-    }
-    //if parent == 0 then parent is first node which grows upwards (positive y-axis)
-    return vec3(0.0, 1.0, 0.0);
-}
-
+/*
 vec3 closestSplinePoint(uint idx, vec3 point) {
     //cubic spline
     float curve = 0.01;
@@ -136,7 +131,8 @@ vec3 cylinderNormal(uint idx, vec3 point) {
     vec3 closestPoint = a + (b - a) * t;
     return normalize(point - closestPoint);
 }
-
+*/
+/*
 vec2 replaceMins(vec2 mins, float value) {
     if (value < mins[0]) {
         mins[1] = mins[0];
@@ -147,6 +143,7 @@ vec2 replaceMins(vec2 mins, float value) {
     }
     return mins;
 }
+*/
 
 void main() {
     //vec3 closestPoint = (Model * tree[treeIdx].pos).xyz;
@@ -155,6 +152,7 @@ void main() {
     int steps = 0;
     //check all tree node segments that can intersect with the current one
     //these are the node's child, parent, and parent's child
+    /*
     uint indices[10];
     uint numIndices = 1;
     indices[0] = treeIdx;
@@ -171,30 +169,37 @@ void main() {
     }
     if (tree[treeIdx].parent != 0) indices[numIndices++] = tree[treeIdx].parent;
     vec2 minDists = vec2(99999.9); //2 smallest distances
-
-
-    float dist = 10000000.0;//distance(rayPos, closestPoint);
+    */
+    uint idx = treeIdx;
+    vec3 p3 = nodeWorldPos;
+    vec3 p0 = parentWorldPos;
+    float t = t_guess;
+    vec3 dir = normalize(p3 - p0);
+    float d = distance(p0, p3);
+    float curve = 0.01;
+    float distFactor = 0.5;
+    vec3 p2 = p3 - d * distFactor * dir;// + curve * randomVec3(p3);
+    vec3 p1 = p0 + d * distFactor * parentDir;// - curve * randomVec3(p0);
     float epsilon = 0.001;
+    float w1 = tree[idx].width;
+    float w0 = tree[tree[idx].parent].width;
+
+    vec3 splinePoint = cubicSpline(p0, p1, p2, p3, t);
+    float dist = distance(rayPos, splinePoint) - mix(w0, w1, t);//distance(rayPos, closestPoint);
+    
     while (dist > epsilon && steps < 10) {
         //vec3 a = (Model * tree[treeIdx].pos).xyz;
-
         
+        splinePoint = cubicSpline(p0, p1, p2, p3, t);
+        dist = distance(rayPos, splinePoint) - mix(w0, w1, t);
         
-        dist = splineDist(treeIdx, rayPos);
+        //dist = splineDist(treeIdx, rayPos);
         rayPos += dist * viewDir;
         steps++;
     }
     if (dist > epsilon) {
         discard;
         return;
-    }
-    for (uint i = 0; i < numIndices; i++) {
-        float value = splineDist(indices[i], rayPos);
-        if (abs(value - dist) < 5 * epsilon) {
-            dist = smin(value, dist, 0.01); 
-        }
-        //minDists = replaceMins(minDists, value);
-        
     }
     vec3 color = vec3(0.5, 0.25, 0.0);
     vec3 lightDir = vec3(1.0, 0.0, 0.0);
