@@ -12,6 +12,7 @@ out vec4 FragColor;
 
 uniform layout(location = 0) mat4 Model;
 uniform layout(location = 2) vec3 cameraPos;
+uniform layout(location = 3) mat4 VP;
 
 struct Node {
     uint idx;
@@ -174,7 +175,7 @@ void main() {
     vec3 p3 = nodeWorldPos;
     vec3 p0 = parentWorldPos;
     float t = t_guess;
-    vec3 dir = normalize(p3 - p0);
+    //vec3 dir = normalize(p3 - p0);
     float d = distance(p0, p3);
     float curve = 0.01;
     float distFactor = 0.5;
@@ -190,21 +191,45 @@ void main() {
     while (dist > epsilon && steps < 10) {
         //vec3 a = (Model * tree[treeIdx].pos).xyz;
         
-        splinePoint = cubicSpline(p0, p1, p2, p3, t);
-        dist = distance(rayPos, splinePoint) - mix(w0, w1, t);
         
+        
+        //float bestT = t;
+        splinePoint = cubicSpline(p0, p1, p2, p3, t);
+        /*
+        vec3 delta = rayPos - splinePoint;
+        float d2min = dot(delta, delta);
+        for (float tt = t - 0.1; tt <= t + 0.1; tt += 0.02) {
+            splinePoint = cubicSpline(p0, p1, p2, p3, t);
+            delta = rayPos - splinePoint;
+            float d2 = dot(delta, delta);
+            if (d2 < d2min) {
+                d2min = d2;
+                bestT = 
+            }
+        }
+        */
+        dist = distance(splinePoint, rayPos) - mix(w0, w1, t);
         //dist = splineDist(treeIdx, rayPos);
         rayPos += dist * viewDir;
+        t = closestParameter(p0, p3, rayPos);
         steps++;
+        //if (dot(dir, rayPos - p3) > 0.0 || dot(-dir, rayPos - p0) > 0.0) {
+        if (t > 1.0 || t < 0.0) {
+            discard;
+            return;
+        }
     }
     if (dist > epsilon) {
         discard;
         return;
     }
+
     vec3 color = vec3(0.5, 0.25, 0.0);
     vec3 lightDir = vec3(1.0, 0.0, 0.0);
-    //float brightness = clamp(dot(lightDir, splineNormal(treeIdx, rayPos)), 0.1, 1.0);
-    float brightness = 1.0;
+    float brightness = clamp(dot(lightDir, normalize(rayPos - splinePoint)), 0.1, 1.0);
+    //float brightness = 1.0;
+    vec4 screenPos = VP * vec4(rayPos, 1.0);
+    gl_FragDepth = screenPos.z / screenPos.w;
     FragColor = vec4(
         brightness * exp(-dist) * color,
         //color,

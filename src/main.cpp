@@ -96,8 +96,8 @@ int main() {
 		camera.move();
 		mat4 VP = camera.getVP();
 		mat4 Model = translate(mat4(1.0f), vec3(0.0f, 0.0f, -8.0f));
-		mat4 MVP = VP * Model;
-		tree.render(treeShader, Model, MVP, camera.getPos());
+		//mat4 MVP = VP * Model;
+		tree.render(treeShader, Model, VP, camera.getPos());
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

@@ -52,10 +52,12 @@ Tree::Tree(float branchAngle, float initialWidth, float widthDecay, int iteratio
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
-void Tree::render(GLuint shader, mat4 Model, mat4 MVP, vec3 camPos) {
+void Tree::render(GLuint shader, mat4 Model, mat4 VP, vec3 camPos) {
     glUseProgram(shader);
 	glUniformMatrix4fv(0, 1, GL_FALSE, &Model[0][0]);
+    mat4 MVP = VP * Model;
 	glUniformMatrix4fv(1, 1, GL_FALSE, &MVP[0][0]);
+    glUniformMatrix4fv(3, 1, GL_FALSE, &VP[0][0]);
 	glUniform3fv(2, 1, &camPos[0]);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->treeBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, turtle->treeBuffer);
