@@ -56,14 +56,14 @@ void Turtle::buildGPU(GLuint stringBuffer, int cylinderSegments) {
     glGenBuffers(1, &treeBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, treeBuffer);
     //TODO: properly set size of treeBuffer
-    glBufferData(GL_SHADER_STORAGE_BUFFER, 2 * bufferSize, NULL, GL_STATIC_DRAW); 
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 5 * bufferSize, NULL, GL_STATIC_DRAW); 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, treeBuffer);
 
-    GLuint boxVBO;
-    glGenBuffers(1, &boxVBO);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, boxVBO);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, 36 * 4 * sizeof(float), NULL, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, boxVBO);
+    glGenBuffers(1, &leafModelsBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, leafModelsBuffer);
+    //TODO: properly set size of leafmodelsBuffer
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 3 * bufferSize, NULL, GL_STATIC_DRAW); 
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, leafModelsBuffer);
 
     glUniform1ui(0, bufferSize / sizeof(GLuint)); //string size (number of characters)
     glUniform1f(1, state.width);
@@ -72,9 +72,10 @@ void Turtle::buildGPU(GLuint stringBuffer, int cylinderSegments) {
     glUniform1f(4, 5 * state.width);
     glDispatchCompute(1, 1, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    /*
+    
     //print
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, treeBuffer);
+    /*
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, leafModelsBuffer);
     //int outputSize;
     //glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &outputSize);
     vector<float> testSum;
@@ -86,11 +87,5 @@ void Turtle::buildGPU(GLuint stringBuffer, int cylinderSegments) {
         cout << ", " << testSum[i];
     }
     */
-    
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    glGenVertexArrays(1, &boxVAO);
-    glBindVertexArray(boxVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, boxVBO);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
 }

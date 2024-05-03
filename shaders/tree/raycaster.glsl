@@ -229,9 +229,11 @@ void main() {
     float distFactor = 0.5;
     vec3 p2 = p3 - d * distFactor * dir;// + curve * randomVec3(p3);
     vec3 p1 = p0 + d * distFactor * parentDir;// - curve * randomVec3(p0);
-    float epsilon = 0.001;
+    
     float w1 = tree[idx].width;
     float w0 = tree[tree[idx].parent].width;
+    float epsilon = 0.01 * w1;
+    vec3 middlePoint = 0.5 * (p3 + p1);
 
     vec3 splinePoint = cubicSpline(p0, p1, p2, p3, t);
     float dist = distance(rayPos, splinePoint) - mix(w0, w1, t);//distance(rayPos, closestPoint);
@@ -243,6 +245,7 @@ void main() {
         
         //float bestT = t;
         splinePoint = cubicSpline(p0, p1, p2, p3, t);
+        //splinePoint = quadraticSpline(p0, middlePoint, p1, t);
         /*
         vec3 delta = rayPos - splinePoint;
         float d2min = dot(delta, delta);
@@ -257,6 +260,7 @@ void main() {
         }
         */
         dist = distance(splinePoint, rayPos) - mix(w0, w1, t);
+        //dist = cylinderDist(idx, rayPos);
         //dist = splineDist(treeIdx, rayPos);
         rayPos += dist * viewDir;
         t = closestParameter(p0, p3, rayPos);
@@ -279,19 +283,20 @@ void main() {
             p1 = p0 + d * distFactor * parentDir;
         }*/
     }
-    if (dist > epsilon) {
+    if (dist > 1.5 * epsilon) {
         discard;
         return;
     }
 
-    vec3 color = pow(matWood(rayPos), vec3(.4545));
+    //vec3 color = pow(matWood(rayPos), vec3(.4545));
+    vec3 color = vec3(0.6, 0.4, 0.1);
     vec3 lightDir = vec3(1.0, 0.0, 0.0);
     float brightness = clamp(dot(lightDir, normalize(rayPos - splinePoint)), 0.1, 1.0);
     //float brightness = 1.0;
-    vec4 screenPos = VP * vec4(rayPos, 1.0);
-    gl_FragDepth = screenPos.z / screenPos.w;
+    //vec4 screenPos = VP * vec4(rayPos, 1.0);
+    //gl_FragDepth = screenPos.z / screenPos.w;
     FragColor = vec4(
-        brightness * exp(-dist) * color,
+        brightness * color,
         //color,
         1.0
     );

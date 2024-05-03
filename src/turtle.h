@@ -18,7 +18,7 @@ public:
     void popState();
 
     vector<vec2> vertices; //line points for GL_LINES
-    GLuint treeBuffer, boxVAO;
+    GLuint treeBuffer, boxVAO, leafModelsBuffer;
 
     State state;
     stack<State> stateStack;

@@ -21,6 +21,12 @@ layout (binding = 1) coherent buffer block1
     Node tree[];   
 };
 
+layout (binding = 2) coherent writeonly buffer block2 
+{
+    uint lastLeafIdx;
+    mat4 Models[];
+};
+
 /*
 layout (binding = 2) coherent writeonly buffer block2
 {
@@ -104,6 +110,7 @@ void main() {
     tree[0].parent = 0;
     tree[0].children = uvec4(0);
     lastIdx = 0;
+    uint leafIdx = 0;
     for (uint i = 0; i < stringLength; i++) {
         switch (string[i]) {
             case 43:    // + turn left
@@ -128,13 +135,17 @@ void main() {
                 stack[++top] = currentState;              
                 break;
             case 93:    // ] pop state
+                //put leaf at end of branch
+                Models[leafIdx++] = currentState.transform;
                 currentState = stack[top--];
+                
                 break;
             case 33:    // ! decrement segment width
-                currentState.width *= 0.8;
+                currentState.width *= 0.7;
                 break;
             case 76:    // L (BIG L) make leaf
                 //todo: put leaf transform matrix into a buffer, render leaves using instancing and buffer as uniform buffer
+                Models[leafIdx++] = currentState.transform;
                 break;
             default:    // go forward, add new node to tree, connect to parent
                 //increment lastIdx
@@ -155,83 +166,9 @@ void main() {
                     }
                 }
                 currentState.treeIdx = lastIdx;
-                //update bounding box bounds
-                /*
-                for (int j = 0; j < 3; j++) {
-                    if (tree[idx].pos[j] < boxMin[j]) boxMin[j] = tree[idx].pos[j] - tree[idx].width;
-                    if (tree[idx].pos[j] > boxMax[j]) boxMax[j] = tree[idx].pos[j] + tree[idx].width;
-                }
-                */
+
                 break;
         };
     }
-    //write bounding box buffer data
-    /*
-    uint boxIdx = 0;
-    vec4 c00 = vec4(boxMin.x, boxMin.y, boxMin.z, 1.0);
-    vec4 c01 = vec4(boxMin.x, boxMax.y, boxMin.z, 1.0);
-    vec4 c10 = vec4(boxMax.x, boxMin.y, boxMin.z, 1.0);
-    vec4 c11 = vec4(boxMax.x, boxMax.y, boxMin.z, 1.0); 
-    boxVertices[boxIdx++] = c00;
-    boxVertices[boxIdx++] = c01;
-    boxVertices[boxIdx++] = c10;
-    boxVertices[boxIdx++] = c10;
-    boxVertices[boxIdx++] = c01;
-    boxVertices[boxIdx++] = c11;
-
-    c00 = vec4(boxMin.x, boxMin.y, boxMax.z, 1.0);
-    c01 = vec4(boxMin.x, boxMax.y, boxMax.z, 1.0);
-    c10 = vec4(boxMax.x, boxMin.y, boxMax.z, 1.0);
-    c11 = vec4(boxMax.x, boxMax.y, boxMax.z, 1.0); 
-    boxVertices[boxIdx++] = c00;
-    boxVertices[boxIdx++] = c01;
-    boxVertices[boxIdx++] = c10;
-    boxVertices[boxIdx++] = c10;
-    boxVertices[boxIdx++] = c01;
-    boxVertices[boxIdx++] = c11;
-
-    c00 = vec4(boxMin.x, boxMin.y, boxMin.z, 1.0);
-    c01 = vec4(boxMin.x, boxMin.y, boxMax.z, 1.0);
-    c10 = vec4(boxMin.x, boxMax.y, boxMin.z, 1.0);
-    c11 = vec4(boxMin.x, boxMax.y, boxMax.z, 1.0); 
-    boxVertices[boxIdx++] = c00;
-    boxVertices[boxIdx++] = c01;
-    boxVertices[boxIdx++] = c10;
-    boxVertices[boxIdx++] = c10;
-    boxVertices[boxIdx++] = c01;
-    boxVertices[boxIdx++] = c11; 
-
-    c00 = vec4(boxMax.x, boxMin.y, boxMin.z, 1.0);
-    c01 = vec4(boxMax.x, boxMin.y, boxMax.z, 1.0);
-    c10 = vec4(boxMax.x, boxMax.y, boxMin.z, 1.0);
-    c11 = vec4(boxMax.x, boxMax.y, boxMax.z, 1.0); 
-    boxVertices[boxIdx++] = c00;
-    boxVertices[boxIdx++] = c01;
-    boxVertices[boxIdx++] = c10;
-    boxVertices[boxIdx++] = c10;
-    boxVertices[boxIdx++] = c01;
-    boxVertices[boxIdx++] = c11;
-
-    c00 = vec4(boxMin.x, boxMin.y, boxMin.z, 1.0);
-    c01 = vec4(boxMin.x, boxMin.y, boxMax.z, 1.0);
-    c10 = vec4(boxMax.x, boxMin.y, boxMin.z, 1.0);
-    c11 = vec4(boxMax.x, boxMin.y, boxMax.z, 1.0); 
-    boxVertices[boxIdx++] = c00;
-    boxVertices[boxIdx++] = c01;
-    boxVertices[boxIdx++] = c10;
-    boxVertices[boxIdx++] = c10;
-    boxVertices[boxIdx++] = c01;
-    boxVertices[boxIdx++] = c11;
-
-    c00 = vec4(boxMin.x, boxMax.y, boxMin.z, 1.0);
-    c01 = vec4(boxMin.x, boxMax.y, boxMax.z, 1.0);
-    c10 = vec4(boxMax.x, boxMax.y, boxMin.z, 1.0);
-    c11 = vec4(boxMax.x, boxMax.y, boxMax.z, 1.0); 
-    boxVertices[boxIdx++] = c00;
-    boxVertices[boxIdx++] = c01;
-    boxVertices[boxIdx++] = c10;
-    boxVertices[boxIdx++] = c10;
-    boxVertices[boxIdx++] = c01;
-    boxVertices[boxIdx++] = c11;
-    */
+    lastLeafIdx = leafIdx;
 }
