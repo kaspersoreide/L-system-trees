@@ -13,12 +13,12 @@ public:
 
     Turtle(float initialWidth, float widthDecay, float rotationAngle);
     void build(string buildString);
-    void buildGPU(GLuint stringBuffer, int cylinderSegments, int nSegments, int nLeaves);
+    void buildGPU(GLuint stringBuffer, int cylinderSegments);
     void pushState();
     void popState();
 
     vector<vec2> vertices; //line points for GL_LINES
-    GLuint VAO, vertexCount;
+    GLuint treeBuffer, boxVAO, leafModelsBuffer;
 
     State state;
     stack<State> stateStack;
