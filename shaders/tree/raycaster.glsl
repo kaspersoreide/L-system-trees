@@ -193,7 +193,6 @@ vec3 matWood(vec3 p) {
 	return mix(mix(vec3(.03, .012, .003), vec3(.25, .11, .04), remap01(n2, .19, .56)), vec3(.52, .32, .19), remap01(n2, .56, 1.));
 }
 
-
 void main() {
     //vec3 closestPoint = (Model * tree[treeIdx].pos).xyz;
     vec3 viewDir = normalize(worldPos - cameraPos);
@@ -222,71 +221,58 @@ void main() {
     uint idx = treeIdx;
     vec3 p3 = nodeWorldPos;
     vec3 p0 = parentWorldPos;
-    float t = t_guess;
+
     //vec3 dir = normalize(p3 - p0);
-    float d = distance(p0, p3);
+    float dist = distance(p0, p3);
     float curve = 0.01;
-    float distFactor = 0.5;
-    vec3 p2 = p3 - d * distFactor * dir;// + curve * randomVec3(p3);
-    vec3 p1 = p0 + d * distFactor * parentDir;// - curve * randomVec3(p0);
+    float distFactor = 0.3;
+    vec3 p2 = p3 - dist * distFactor * dir;// + curve * randomVec3(p3);
+    vec3 p1 = p0 + dist * distFactor * parentDir;// - curve * randomVec3(p0);
     
     float w1 = tree[idx].width;
     float w0 = tree[tree[idx].parent].width;
     float epsilon = 0.01 * w1;
-    vec3 middlePoint = 0.5 * (p3 + p1);
+    vec3 middlePoint = 0.5 * (p3 + p0);
 
-    vec3 splinePoint = cubicSpline(p0, p1, p2, p3, t);
-    float dist = distance(rayPos, splinePoint) - mix(w0, w1, t);//distance(rayPos, closestPoint);
+    float t0 = 0.0;
+    float t1 = 1.0;
+    vec3 splinePoint;
+    float r;
+    vec3 l;
+    float tc;
+    float d0, d1;
     
-    while (dist > epsilon && steps < 10) {
-        //vec3 a = (Model * tree[treeIdx].pos).xyz;
+    while (1 == 1) {
         
-        
-        
-        //float bestT = t;
-        splinePoint = cubicSpline(p0, p1, p2, p3, t);
-        //splinePoint = quadraticSpline(p0, middlePoint, p1, t);
-        /*
-        vec3 delta = rayPos - splinePoint;
-        float d2min = dot(delta, delta);
-        for (float tt = t - 0.1; tt <= t + 0.1; tt += 0.02) {
-            splinePoint = cubicSpline(p0, p1, p2, p3, t);
-            delta = rayPos - splinePoint;
-            float d2 = dot(delta, delta);
-            if (d2 < d2min) {
-                d2min = d2;
-                bestT = 
-            }
+        splinePoint = cubicSpline(p0, p1, p2, p3, t0);
+        r = mix(w0, w1, t0);
+        l = splinePoint - cameraPos;
+        tc = dot(viewDir, l);
+        d0 = dot(l, l) - tc * tc;
+
+        splinePoint = cubicSpline(p0, p1, p2, p3, t1);
+        r = mix(w0, w1, t1);
+        l = splinePoint - cameraPos;
+        tc = dot(viewDir, l);
+        d1 = dot(l, l) - tc * tc;
+
+        float middle = mix(t0, t1, 0.5);
+        if (d0 < d1) {
+            t1 = middle;
+        } else {
+            t0 = middle;
         }
-        */
-        dist = distance(splinePoint, rayPos) - mix(w0, w1, t);
-        //dist = cylinderDist(idx, rayPos);
-        //dist = splineDist(treeIdx, rayPos);
-        rayPos += dist * viewDir;
-        t = closestParameter(p0, p3, rayPos);
-        steps++;
-        //if (dot(dir, rayPos - p3) > 0.0 || dot(-dir, rayPos - p0) > 0.0) {
-        if (t > 1.0 || t < 0.0) {
-            discard;
-            return;
+        if (abs(d1 - d0) < 0.00001) {
+            break;
         }
-        /*if (t >= 1.0) {
-            p0 = p3;
-            p3 = (Model * tree[tree[treeIdx].children[0]].pos).xyz;
-            p2 = p3 - d * distFactor * dir;// + curve * randomVec3(p3);
-            p1 = p0 + d * distFactor * parentDir;
-        }
-        else if (t < 0.0) {
-            p3 = p0;
-            p0 = (Model * tree[tree[treeIdx].parent].pos).xyz;
-            p2 = p3 - d * distFactor * dir;// + curve * randomVec3(p3);
-            p1 = p0 + d * distFactor * parentDir;
-        }*/
     }
-    if (dist > 1.5 * epsilon) {
+    
+    if (d1 > r * r) {
         discard;
         return;
     }
+
+    rayPos = cameraPos + (tc - sqrt(r * r - d1)) * viewDir;
 
     //vec3 color = pow(matWood(rayPos), vec3(.4545));
     vec3 color = vec3(0.6, 0.4, 0.1);
