@@ -11,7 +11,7 @@ struct Node {
     uint idx;
     uint parent;
     uvec4 children;     //max 4 children
-    vec4 pos;
+    mat4 T;
     float width;
 };
 
@@ -91,8 +91,6 @@ struct State {
 };
 
 void main() {
-    vec3 boxMin = vec3(0.0);
-    vec3 boxMax = vec3(0.0);
     int top = -1;
     State stack[16];
     State currentState;
@@ -105,7 +103,7 @@ void main() {
     );
     currentState.treeIdx = 0;
     currentState.width = branchWidth;
-    tree[0].pos = vec4(0.0, 0.0, 0.0, 1.0);
+    tree[0].T = currentState.transform;
     tree[0].width = currentState.width;
     tree[0].parent = 0;
     tree[0].children = uvec4(0);
@@ -154,7 +152,7 @@ void main() {
                 vec3 dir = currentState.transform[0].xyz;
                 currentState.transform = translate(branchLength * dir) * currentState.transform;
                 //create child node, set parent and other data
-                tree[lastIdx].pos = currentState.transform[3];
+                tree[lastIdx].T = currentState.transform;
                 tree[lastIdx].parent = currentState.treeIdx;
                 tree[lastIdx].width = currentState.width;
                 tree[lastIdx].children = uvec4(0);

@@ -56,7 +56,7 @@ void Turtle::buildGPU(GLuint stringBuffer, int cylinderSegments) {
     glGenBuffers(1, &treeBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, treeBuffer);
     //TODO: properly set size of treeBuffer
-    glBufferData(GL_SHADER_STORAGE_BUFFER, 5 * bufferSize, NULL, GL_STATIC_DRAW); 
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 8 * bufferSize, NULL, GL_STATIC_DRAW); 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, treeBuffer);
 
     glGenBuffers(1, &leafModelsBuffer);
