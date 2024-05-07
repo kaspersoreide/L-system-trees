@@ -87,7 +87,8 @@ int main() {
 	
 	GLuint treeShader = loadShaders("shaders/tree/boxvert.glsl", "shaders/tree/raycaster.glsl");
 	GLuint leafShader = loadShaders("shaders/tree/leaf_vert.glsl", "shaders/tree/leaf_frag.glsl");
-	
+	GLuint simpleTreeShader = loadShaders("shaders/tree/boxvert.glsl", "shaders/tree/simplefrag.glsl");
+
 	Tree tree(22.7f, 0.05, 0.97, 5, 0);
 
 	while (!glfwWindowShouldClose(window)) {
@@ -98,7 +99,7 @@ int main() {
 		mat4 VP = camera.getVP();
 		mat4 Model = translate(mat4(1.0f), vec3(0.0f, 0.0f, -8.0f));
 		//mat4 MVP = VP * Model;
-		tree.render(treeShader, Model, VP, camera.getPos(), leafShader);
+		tree.render(simpleTreeShader, Model, VP, camera.getPos(), leafShader);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

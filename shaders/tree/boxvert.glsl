@@ -13,13 +13,15 @@ flat out vec3 nodeWorldPos;
 flat out vec3 parentWorldPos;
 flat out vec3 dir;
 flat out vec3 parentDir;
+flat out float width0;
+flat out float width1;
 
 
 struct Node {
     uint idx;
     uint parent;
     uvec4 children;     //max 4 children
-    vec4 pos;
+    mat4 T;
     float width;
 };
 
@@ -40,8 +42,8 @@ float closestParameter(vec3 a, vec3 b, vec3 point) {
 vec3 getParentDir(uint idx) {
     uint pIdx = tree[idx].parent;
     if (pIdx != 0) {
-        vec3 p1 = tree[pIdx].pos.xyz;
-        vec3 p0 = tree[tree[pIdx].parent].pos.xyz;
+        vec3 p1 = tree[pIdx].T[3].xyz;
+        vec3 p0 = tree[tree[pIdx].parent].T[3].xyz;
         return normalize(p1 - p0);
     }
     //if parent == 0 then parent is first node which grows upwards (positive y-axis)
@@ -52,13 +54,16 @@ void main() {
     vec4 vertPos = vec4(pos.xyz, 1.0);
     worldPos = (Model * vertPos).xyz;
     uint idx = floatBitsToUint(pos[3]);
-    vec3 p1 = (Model * tree[idx].pos).xyz;
-    vec3 p0 = (Model * tree[tree[idx].parent].pos).xyz;
+    vec3 p1 = (Model * tree[idx].T[3]).xyz;
+    vec3 p0 = (Model * tree[tree[idx].parent].T[3]).xyz;
     dir = normalize(p1 - p0);
     parentDir = getParentDir(idx);
     t_guess = closestParameter(p0, p1, worldPos);
     nodeWorldPos = p1;
     parentWorldPos = p0;
     treeIdx = idx;
+    width0 = tree[tree[idx].parent].width;
+    width1 = tree[idx].width;
+    
     gl_Position = MVP * vertPos;
 }

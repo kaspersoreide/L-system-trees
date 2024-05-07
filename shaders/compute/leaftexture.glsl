@@ -1,8 +1,8 @@
 #version 430
 
-in vec2 uv;
+layout (local_size_x = 1, local_size_y = 1) in;
 
-out vec4 FragColor;
+uniform vec2 resolution;
 
 const float	SMALL_VEIN_DISTANCE_MIN =  .005;
 const float	SMALL_VEIN_DISTANCE_MAX = -.002;
@@ -202,7 +202,7 @@ vec3 ComputeLighting(vec2 p,vec3 n,vec3 l){
 vec3 ComputeLighting(vec2 p,vec3 n){return ComputeLighting(p,n,vec3(0,0,-1));}
 vec3 ComputeLighting(vec2 p){return ComputeLighting(p,vec3(0,0,1));}
 
-/*
+
 void main() {
     vec2 u= vec2(gl_GlobalInvocationID.xy) / resolution.xy;
     u-=.5;//center
@@ -210,19 +210,4 @@ void main() {
     vec3 Leaf=ComputeLighting((u*8.));
     Leaf=sqrt(Leaf*.1);
     fragColor=vec4(Leaf,1.);
-}
-*/
-
-void main() {
-    vec2 u = uv - 0.5;
-    vec3 Leaf=ComputeLighting((u*8.));
-    Leaf=sqrt(Leaf*.1);
-    if (Leaf == vec3(1.0)) {
-        discard;
-        return;
-    }
-    FragColor = vec4(
-        Leaf,
-        1.0
-    );
 }

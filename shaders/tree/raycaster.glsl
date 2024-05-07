@@ -18,7 +18,7 @@ struct Node {
     uint idx;
     uint parent;
     uvec4 children;     //max 4 children
-    vec4 pos;
+    mat4 T;
     float width;
 };
 
@@ -85,8 +85,8 @@ float closestParameter(vec3 a, vec3 b, vec3 point) {
 float cylinderDist(uint idx, vec3 point) {
     //approximate by cylinder using distance from point to line
     //https://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
-    vec3 x2 = (Model * tree[idx].pos).xyz;
-    vec3 x1 = (Model * tree[tree[idx].parent].pos).xyz;
+    vec3 x2 = (Model * tree[idx].T[3]).xyz;
+    vec3 x1 = (Model * tree[tree[idx].parent].T[3]).xyz;
     vec3 cp = cross(point - x1, point - x2);
     float d = length(cross(point - x1, point - x2)) / distance(x2, x1); 
     return d - tree[idx].width;
@@ -98,12 +98,14 @@ vec3 quadraticSpline(vec3 a, vec3 b, vec3 c, float t) {
     return mix(ab, bc, t);
 }
 
-float sum2(vec2 v) { return dot(v, vec2(1)); }
-float sat(float x) { return clamp(x, 0.0, 1.0); }
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
 //procedural wood texture shader code retrieved from https://www.shadertoy.com/view/mdy3R1
+
+float sum2(vec2 v) { return dot(v, vec2(1)); }
+float sat(float x) { return clamp(x, 0.0, 1.0); }
 
 float h31(vec3 p3) {
 	p3 = fract(p3 * .1031);
@@ -261,9 +263,6 @@ void main() {
             t1 = middle;
         } else {
             t0 = middle;
-        }
-        if (abs(d1 - d0) < 0.00001) {
-            break;
         }
     }
     
