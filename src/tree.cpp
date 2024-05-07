@@ -1,6 +1,7 @@
 #include "tree.h"
 #include <iostream>
 #include "loadshaders.h"
+#include <glm/gtx/transform.hpp>
 
 void Tree::generateLeafVAO() {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->leafModelsBuffer);
@@ -42,16 +43,17 @@ void Tree::generateLeafVAO() {
 }
 
 
-Tree::Tree(float branchAngle, float initialWidth, float widthDecay, int iterations, int type) {
+Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth, float widthDecay, int iterations, int type) {
+    Model = translate(position) * scale(mat4(1.0f), vec3(treeScale));
 	//
     lsystem = new Lsystem();
-    //lsystem->setAxiom("A");
-    //lsystem->addRule('A', "[&F[###^^L]!A]/////#[&F[###^^L]!A]///////#[&F[###^^L]!A]", 1.0f);
-    //lsystem->addRule('F', "S/////F", 1.0f);
-    //lsystem->addRule('S', "F[###^^L]", 1.0f);
-    //lsystem.addRule('S', "FA", 0.5f);
-    lsystem->addRule('F', "F[+!/FL]/^F[-!/FL]/^F", 1.0f);
-	lsystem->setAxiom("F");
+    lsystem->setAxiom("A");
+    lsystem->addRule('A', "[&F[###^^L]!A]/////#[&F[###^^L]!A]///////#[&F[###^^L]!A]", 1.0f);
+    lsystem->addRule('F', "S/////F", 1.0f);
+    lsystem->addRule('S', "F[###^^L]", 1.0f);
+    //lsystem->addRule('F', "F[+!/FL]/^F[-!/FL]/^F", 1.0f);
+    //lsystem->addRule('F', "F[+FL]F", 1.0f);
+	//lsystem->setAxiom("F");
 
     lsystem->iterate(iterations);
     GLuint stringBuffer;
@@ -66,10 +68,11 @@ Tree::Tree(float branchAngle, float initialWidth, float widthDecay, int iteratio
 	turtle = new Turtle(initialWidth, widthDecay, PI * branchAngle / 180);
 	turtle->buildGPU(stringBuffer, 6);
     
+    
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->treeBuffer);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &lastIdx);
-    cout << "lastIdx: " << lastIdx << "\n";
-
+    //cout << "lastIdx: " << lastIdx << "\n";
+    
     GLuint generateVerticesShader = loadComputeShader("shaders/compute/generatevertices.glsl");
     glUseProgram(generateVerticesShader);
 
@@ -94,7 +97,7 @@ Tree::Tree(float branchAngle, float initialWidth, float widthDecay, int iteratio
     generateLeafVAO();
 }
 
-void Tree::render(GLuint shader, mat4 Model, mat4 VP, vec3 camPos, GLuint leafShader) {
+void Tree::render(GLuint shader, mat4 VP, vec3 camPos, GLuint leafShader) {
     mat4 MVP = VP * Model;
 
     //leaves

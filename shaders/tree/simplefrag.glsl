@@ -147,6 +147,7 @@ void main() {
     */
     vec3 normal = normalize(worldPos - splinePoint);
     float brightness = clamp(dot(normal, vec3(1.0, 0.0, 0.0)), 0.1, 1.0);
-    vec3 color = matWood(worldPos);// * vec3(0.7, 1.0, 0.4);
+    //vec3 color = matWood(worldPos);// * vec3(0.7, 1.0, 0.4);
+    vec3 color = vec3(.52, .32, .19);
     FragColor = vec4(brightness * color, 1.0);
 }

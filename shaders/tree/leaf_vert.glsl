@@ -14,7 +14,7 @@ layout (binding = 0) coherent readonly buffer block0
 out vec2 uv;
 
 void main() {
-    float leafScale = 0.1;
+    float leafScale = 0.4;
     vec4 scaledPos = vec4(leafScale * pos.xyz, 1.0);
     gl_Position = MVP * Models[gl_InstanceID] * scaledPos;
     uv = texCoords;
