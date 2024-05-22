@@ -7,6 +7,8 @@ flat in vec3 nodeWorldPos;
 flat in vec3 parentWorldPos;
 flat in vec3 dir;
 flat in vec3 parentDir;
+flat in float width0;
+flat in float width1;
 
 out vec4 FragColor;
 
@@ -230,12 +232,28 @@ void main() {
     float distFactor = 0.3;
     vec3 p2 = p3 - dist * distFactor * dir;// + curve * randomVec3(p3);
     vec3 p1 = p0 + dist * distFactor * parentDir;// - curve * randomVec3(p0);
+    float t = t_guess;
+    float epsilon = width0 * 0.1;
+    vec3 splinePoint = cubicSpline(p0, p1, p2, p3, t);
+    while (steps < 20 && dist > epsilon) {
+        
+        splinePoint = cubicSpline(p0, p1, p2, p3, t);
+        dist = distance(rayPos, splinePoint) - mix(width0, width1, t);
+        rayPos += dist * viewDir; 
+
+        steps++;
+        t = closestParameter(p0, p3, rayPos);
+        if (t < 0.0 || t > 1.0) {
+            discard;
+            return;
+        }
+    }
     
+    /*
     float w1 = tree[idx].width;
     float w0 = tree[tree[idx].parent].width;
     float epsilon = 0.01 * w1;
     vec3 middlePoint = 0.5 * (p3 + p0);
-
     float t0 = 0.0;
     float t1 = 1.0;
     vec3 splinePoint;
@@ -261,9 +279,12 @@ void main() {
         float middle = mix(t0, t1, 0.5);
         if (d0 < d1) {
             t1 = middle;
+            //d1 = d0;
         } else {
             t0 = middle;
+            
         }
+        if (abs(d0 - d1) < 0.0001) break;
     }
     
     if (d1 > r * r) {
@@ -272,7 +293,7 @@ void main() {
     }
 
     rayPos = cameraPos + (tc - sqrt(r * r - d1)) * viewDir;
-
+    */
     //vec3 color = pow(matWood(rayPos), vec3(.4545));
     vec3 color = vec3(0.6, 0.4, 0.1);
     vec3 lightDir = vec3(1.0, 0.0, 0.0);

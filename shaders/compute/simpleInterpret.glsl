@@ -130,7 +130,8 @@ void main() {
                 currentState.transform = currentState.transform * rotationMatrix(vec3(1.0, 0.0, 0.0), -turnAngle);
                 break;
             case 91:    // [ push state
-                stack[++top] = currentState;              
+                stack[++top] = currentState;
+                currentState.width *= 0.6;              
                 break;
             case 93:    // ] pop state
                 //put leaf at end of branch
@@ -150,7 +151,8 @@ void main() {
                 lastIdx++;
                 //move currentstate forward
                 vec3 dir = currentState.transform[0].xyz;
-                currentState.transform = translate(branchLength * dir) * currentState.transform;
+                float pull = 1.0;//- abs(dot(dir, vec3(0.0, -1.0, 0.0)));
+                currentState.transform = translate(branchLength * dir + 0.1 * pull * currentState.width * vec3(0.0, -1.0, 0.0)) * currentState.transform;
                 //create child node, set parent and other data
                 tree[lastIdx].T = currentState.transform;
                 tree[lastIdx].parent = currentState.treeIdx;
@@ -164,7 +166,7 @@ void main() {
                     }
                 }
                 currentState.treeIdx = lastIdx;
-
+                //turn downwards based on gravity
                 break;
         };
     }

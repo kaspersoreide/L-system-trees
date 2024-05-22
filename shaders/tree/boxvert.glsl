@@ -1,6 +1,7 @@
 #version 430
 
 layout(location = 0) in vec4 pos;
+layout(location = 1) in vec4 normal;
 
 uniform layout(location = 0) mat4 Model;
 uniform layout(location = 1) mat4 MVP;
@@ -15,6 +16,8 @@ flat out vec3 dir;
 flat out vec3 parentDir;
 flat out float width0;
 flat out float width1;
+out vec3 rotatedNormal;
+out vec3 rawPos;
 
 
 struct Node {
@@ -52,6 +55,7 @@ vec3 getParentDir(uint idx) {
 
 void main() {
     vec4 vertPos = vec4(pos.xyz, 1.0);
+    rawPos = vertPos.xyz;
     worldPos = (Model * vertPos).xyz;
     uint idx = floatBitsToUint(pos[3]);
     vec3 p1 = (Model * tree[idx].T[3]).xyz;
@@ -64,6 +68,6 @@ void main() {
     treeIdx = idx;
     width0 = tree[tree[idx].parent].width;
     width1 = tree[idx].width;
-    
+    rotatedNormal = (Model * normal).xyz;
     gl_Position = MVP * vertPos;
 }

@@ -16,69 +16,79 @@ void Lsystem::setAxiom(string s) {
 }
 
 void Lsystem::iterate(int n) {
-    if (n == 0) {
-        vector<uint32_t> uintString;
-        for (char c : product) uintString.push_back(c);
-        int stringSize = uintString.size();
-        glCreateBuffers(1, &inputBuffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, inputBuffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, stringSize * sizeof(uint32_t), uintString.data(), GL_DYNAMIC_DRAW);
-        return;
-    }
-    string newProduct = "";
-    for (int i = 0; i < product.length(); ++i) {
-        char c = product[i];
-        string replacement;
-        replacement += c;
-        float randomValue = ((float)rand()/(float)RAND_MAX);
-        float baseValue = 0.0f;
-        for (Production p : rules) {
-            if (p.in == c) {
-                if (randomValue < baseValue + p.probability) {
-                    replacement = p.out;
-                    break;
+    auto begin = chrono::steady_clock::now();
+
+    for (int j = 0; j < n; j++) {
+        string newProduct = "";
+        for (int i = 0; i < product.length(); ++i) {
+            char c = product[i];
+            string replacement;
+            replacement += c;
+            float randomValue = ((float)rand()/(float)RAND_MAX);
+            float baseValue = 0.0f;
+            for (Production p : rules) {
+                if (p.in == c) {
+                    if (randomValue < baseValue + p.probability) {
+                        replacement = p.out;
+                        break;
+                    }
+                    baseValue += p.probability;
                 }
-                baseValue += p.probability;
             }
+            newProduct += replacement;
         }
-        newProduct += replacement;
+        product = newProduct;
     }
-    product = newProduct;
-    iterate(n-1);
+    
+
+    vector<uint32_t> uintString;
+    for (char c : product) uintString.push_back(c);
+    int stringSize = uintString.size();
+    glCreateBuffers(1, &inputBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, inputBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, stringSize * sizeof(uint32_t), uintString.data(), GL_STATIC_DRAW);
+     
+    auto end = chrono::steady_clock::now();
+    std::cout << "time elapsed iterate cpu " << n << " times: " << getMilliseconds(begin, end) << "\n"; 
 }
 
 void Lsystem::loadProductionsBuffer() {
     /* buffer is laid out like this:
+    struct Production {
+        uint input;
+        float proability;
+        uint outputLength;
+        uint output[64]; 
+    }
+
+    layout (binding = 2) coherent readonly buffer block3
     {
-        uint inputs[N_PRODUCTIONS];
-        uint offsets[N_PRODUCTIONS];
-        uint lengths[N_PRODUCTIONS];
-        float probabilities[N_PRODUCTIONS];
-        uint string[];
-    }; 
+        uint n_productions;
+        Production productions[];
+    };
     */
+
+
     glCreateBuffers(1, &productionsBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, productionsBuffer);
-    uint count = rules.size();
-    uint totalStringLength = 0;
-    vector<uint32_t> inputs, offsets, lengths, allProductions;
-    vector<float> probabilities;
-    for (Production p : rules) {
-        inputs.push_back(p.in);
-        offsets.push_back(totalStringLength);
-        lengths.push_back(p.out.size());
-        probabilities.push_back(p.probability);
-        for (char c : p.out) allProductions.push_back(c);
-        totalStringLength += p.out.size();
+    vector<ShaderProduction> productions;
+    for (int i = 0; i < rules.size(); i++) {
+        Production p = rules[i];
+        ShaderProduction sp;
+        for (int j = 0; j < p.out.size(); j++) {
+            sp.output[j] = uint(p.out[j]);
+        }
+        sp.in = uint(p.in);
+        sp.outputLength = uint(p.out.size());
+        sp.probability = p.probability;
+        productions.push_back(sp);
     }
-    uint totalBufferSize = count * (3 * sizeof(uint32_t) + sizeof(float)) + totalStringLength * sizeof(uint32_t);
+    uint totalBufferSize = sizeof(uint) + sizeof(ShaderProduction) * productions.size();
     glBufferData(GL_SHADER_STORAGE_BUFFER, totalBufferSize, NULL, GL_STATIC_DRAW);
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t) * count, inputs.data());
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, count * sizeof(uint32_t), count * sizeof(uint32_t), offsets.data());
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 2 * count * sizeof(uint32_t), count * sizeof(uint32_t), lengths.data());
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 3 * count * sizeof(uint32_t), count * sizeof(float), probabilities.data());
-    glBufferSubData(GL_SHADER_STORAGE_BUFFER, count * (3 * sizeof(uint32_t) + sizeof(float)), totalStringLength * sizeof(uint32_t), allProductions.data());
-
+    uint n_productions = uint(productions.size());
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint), &n_productions);
+    glBufferSubData(GL_SHADER_STORAGE_BUFFER, sizeof(uint), sizeof(ShaderProduction) * productions.size(), productions.data());
+   
     /*
     //printing
     vector<uint32_t> bufferdata;
@@ -161,6 +171,7 @@ void Lsystem::iterateParallel(int n) {
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         swapBuffers();
         stringSize = newStringSize;
+        std::cout << "string size after iteration " << i << ": " << stringSize << "\n";
     }
     //printing
     /*
@@ -182,5 +193,5 @@ void Lsystem::iterateParallel(int n) {
     }
     */
     auto end = chrono::steady_clock::now();
-    cout << "time elapsed iterate parallell " << n << " times: " << getMilliseconds(begin, end) << "\n"; 
+    std::cout << "time elapsed iterate parallell " << n << " times: " << getMilliseconds(begin, end) << "\n"; 
 }

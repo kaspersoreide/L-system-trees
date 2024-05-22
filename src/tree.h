@@ -12,6 +12,6 @@ protected:
     Lsystem* lsystem;
     Turtle* turtle;
     mat4 Model;
-    GLuint VAO, leafVAO;
-    uint32_t lastIdx, lastLeafIdx, leafVertexCount;
+    GLuint VAO, leafVAO, leafTexture, IBO;
+    uint lastIdx, lastLeafIdx, leafVertexCount, indexCount;
 };

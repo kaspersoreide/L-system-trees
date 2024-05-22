@@ -146,7 +146,7 @@ int main() {
 	GLuint leafShader = loadShaders("shaders/tree/leaf_vert.glsl", "shaders/tree/leaf_frag.glsl");
 	GLuint simpleTreeShader = loadShaders("shaders/tree/boxvert.glsl", "shaders/tree/simplefrag.glsl");
 
-	trees.push_back(Tree(vec3(0.0f, 0.0f, -8.0f), 2.0f, 22.7f, 0.05, 0.97, 5, 0));
+	trees.push_back(Tree(vec3(0.0f, 0.0f, -8.0f), 2.0f, 22.7f, 0.5, 0.97, 5, 0));
 	mat4 Projection = perspective(1.2f, 16.0f / 9, 0.1f, 1000.0f);
 	mat4 playerModel;
 

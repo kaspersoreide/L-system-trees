@@ -15,6 +15,13 @@ public:
         float probability;
     };
 
+    struct ShaderProduction {
+        uint in;
+        float probability;
+        uint outputLength;
+        uint output[64];
+    };
+
     Lsystem() {};
     ~Lsystem();
     void addRule(char in, string out, float probability);

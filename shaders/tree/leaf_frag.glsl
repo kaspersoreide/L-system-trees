@@ -1,6 +1,7 @@
 #version 430
 
 in vec2 uv;
+in vec3 normal;
 
 out vec4 FragColor;
 
@@ -214,6 +215,7 @@ void main() {
 */
 
 void main() {
+    /*
     vec2 u = uv - 0.5;
     vec3 Leaf=ComputeLighting((u*8.));
     Leaf=sqrt(Leaf*.1);
@@ -221,8 +223,19 @@ void main() {
         discard;
         return;
     }
-    FragColor = vec4(
-        Leaf,
+    */
+    vec2 u = uv - 0.5;
+    float leafyness = (abs(u.x) < 0.02 * sin(100 * u.y) + 0.4 * cos(PI * u.y)) ? 1.0 : 0.0;
+    if (leafyness <= 0.0) {
+        discard;
+        return;
+    }
+    vec3 lightDir = vec3(1.0, 0.0, 0.0);
+    float brightness = clamp(abs(dot(lightDir, normal)), 0.2, 1.0);
+    FragColor = brightness * vec4(
+        0.4,
+        0.7,
+        0.15,
         1.0
     );
 }

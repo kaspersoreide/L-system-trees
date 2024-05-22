@@ -1,27 +1,29 @@
 #version 430 core
 
-#define N_PRODUCTIONS 7
-
 layout (local_size_x = 32) in;
 
-layout (binding = 0) coherent readonly buffer block1
+layout (binding = 0) coherent readonly buffer block0
 {
     uint input_data[];
 };
 
-layout (binding = 1) coherent writeonly buffer block2
+layout (binding = 1) coherent writeonly buffer block1
 {
     //x is index in productions, y is length of output string
     uvec2 output_data[];
 };
 
-layout (binding = 2) coherent readonly buffer productions
+struct Production {
+    uint predecessor;
+    float proability;
+    uint size;
+    uint successor[64]; 
+};
+
+layout (binding = 2) coherent readonly buffer block2
 {
-    uint inputs[N_PRODUCTIONS];
-    uint offsets[N_PRODUCTIONS];
-    uint lengths[N_PRODUCTIONS];
-    float probabilities[N_PRODUCTIONS];
-    uint string[];
+    uint n_productions;
+    Production productions[];
 };
 
 // A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
@@ -56,14 +58,14 @@ void main() {
     uint stringId = 0;
     float randomValue = random(id + input_data[id]);
     float baseValue = 0.0;
-    for (int i = 0; i < N_PRODUCTIONS; i++) {
-        if (inputs[i] == input_data[id]) {
-            if (randomValue <= baseValue + probabilities[i]) {
+    for (int i = 0; i < n_productions; i++) {
+        if (productions[i].predecessor == input_data[id]) {
+            if (randomValue <= baseValue + productions[i].proability) {
                 stringId = i;
                 break;
             }
-            baseValue += probabilities[i];
+            baseValue += productions[i].proability;
         }
     }
-    output_data[id] = uvec2(stringId, lengths[stringId]);
+    output_data[id] = uvec2(stringId, productions[stringId].size);
 }   

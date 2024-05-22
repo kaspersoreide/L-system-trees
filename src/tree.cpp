@@ -47,15 +47,25 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     Model = translate(position) * scale(mat4(1.0f), vec3(treeScale));
 	//
     lsystem = new Lsystem();
-    lsystem->setAxiom("A");
+    /*lsystem->setAxiom("A");
     lsystem->addRule('A', "[&F[###^^L]!A]/////#[&F[###^^L]!A]///////#[&F[###^^L]!A]", 1.0f);
     lsystem->addRule('F', "S/////F", 1.0f);
     lsystem->addRule('S', "F[###^^L]", 1.0f);
-    //lsystem->addRule('F', "F[+!/FL]/^F[-!/FL]/^F", 1.0f);
+    lsystem->addRule('[', "[", 1.0f);
+    lsystem->addRule(']', "]", 1.0f);
+    lsystem->addRule('L', "L", 1.0f);
+    lsystem->addRule('&', "&", 1.0f);
+    lsystem->addRule('^', "^", 1.0f);
+    lsystem->addRule('/', "/", 1.0f);
+    lsystem->addRule('!', "!", 1.0f);
+    lsystem->addRule('#', "#", 1.0f);
+    */
+    lsystem->addRule('F', "F[++!FL]/F[--!FL]F", 1.0f);
     //lsystem->addRule('F', "F[+FL]F", 1.0f);
-	//lsystem->setAxiom("F");
-
+	lsystem->setAxiom("F");
+    lsystem->loadProductionsBuffer();
     lsystem->iterate(iterations);
+    /*
     GLuint stringBuffer;
     glGenBuffers(1, &stringBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, stringBuffer);
@@ -65,14 +75,15 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     }
     int stringSize = uintString.size();
     glBufferData(GL_SHADER_STORAGE_BUFFER, stringSize * sizeof(uint32_t), uintString.data(), GL_STATIC_DRAW);
+    */
 	turtle = new Turtle(initialWidth, widthDecay, PI * branchAngle / 180);
-	turtle->buildGPU(stringBuffer, 6);
+	turtle->buildGPU(lsystem->inputBuffer, 6);
     
     
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->treeBuffer);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &lastIdx);
     //cout << "lastIdx: " << lastIdx << "\n";
-    
+    /*
     GLuint generateVerticesShader = loadComputeShader("shaders/compute/generatevertices.glsl");
     glUseProgram(generateVerticesShader);
 
@@ -93,6 +104,44 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    */
+    GLuint generateSplinesShader = loadComputeShader("shaders/compute/generatesplines.glsl");
+    glUseProgram(generateSplinesShader);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->treeBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, turtle->treeBuffer);
+
+    uint segmentsPerNode = 5;
+    uint verticesPerSegment = 20;
+    glUniform1ui(0, segmentsPerNode);
+    glUniform1ui(1, verticesPerSegment);
+    indexCount = segmentsPerNode * verticesPerSegment * lastIdx * 6;
+
+    GLuint VBO, normalBuffer;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, VBO);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, lastIdx * segmentsPerNode * verticesPerSegment * 4 * sizeof(float), NULL, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, VBO);
+    glGenBuffers(1, &IBO);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, IBO);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, lastIdx * segmentsPerNode * verticesPerSegment * 6 * sizeof(uint), NULL, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, IBO);
+    glGenBuffers(1, &normalBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, normalBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, lastIdx * segmentsPerNode * verticesPerSegment * 4 * sizeof(float), NULL, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, normalBuffer);
+
+    glDispatchCompute(lastIdx, segmentsPerNode, 1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
     generateLeafVAO();
 }
@@ -118,5 +167,8 @@ void Tree::render(GLuint shader, mat4 VP, vec3 camPos, GLuint leafShader) {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->treeBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, turtle->treeBuffer);
     glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36 * lastIdx);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+    //glPointSize(5);
+    //glDrawArrays(GL_POINTS, 0, 10 * 10 * lastIdx);
 }
