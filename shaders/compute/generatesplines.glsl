@@ -35,7 +35,7 @@ layout (binding = 2) coherent writeonly buffer block2
 
 layout (binding = 3) coherent writeonly buffer block3
 {
-    //combined as vec3 for vertex position and last float as encoded index into tree[]
+    //last component is 0, so this vector is invariant under translation
     vec4 normals[];   
 };
 

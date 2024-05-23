@@ -37,4 +37,6 @@ public:
     GLuint inputBuffer;
     GLuint outputBuffer;
     GLuint productionsBuffer;
+    uint n_nodes = 0;
+    uint n_leaves = 0;
 };

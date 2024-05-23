@@ -17,6 +17,7 @@ void Lsystem::setAxiom(string s) {
 
 void Lsystem::iterate(int n) {
     auto begin = chrono::steady_clock::now();
+    
 
     for (int j = 0; j < n; j++) {
         string newProduct = "";
@@ -40,9 +41,13 @@ void Lsystem::iterate(int n) {
         product = newProduct;
     }
     
-
+    
     vector<uint32_t> uintString;
-    for (char c : product) uintString.push_back(c);
+    for (char c : product) {
+        if (c == 'L') n_leaves++;
+        if (c == 'F') n_nodes++;
+        uintString.push_back(c);
+    }
     int stringSize = uintString.size();
     glCreateBuffers(1, &inputBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, inputBuffer);

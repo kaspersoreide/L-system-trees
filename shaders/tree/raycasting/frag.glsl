@@ -3,18 +3,21 @@
 in vec3 worldPos;
 flat in uint treeIdx;
 in float t_guess;
-flat in vec3 nodeWorldPos;
-flat in vec3 parentWorldPos;
-flat in vec3 dir;
-flat in vec3 parentDir;
+flat in vec3 p0;
+flat in vec3 p1;
+flat in vec3 p2;
+flat in vec3 p3;
 flat in float width0;
 flat in float width1;
+in vec3 rawPos;
+in vec3 cameraPosInv;
 
 out vec4 FragColor;
 
 uniform layout(location = 0) mat4 Model;
 uniform layout(location = 2) vec3 cameraPos;
 uniform layout(location = 3) mat4 VP;
+uniform layout(location = 4) mat4 ModelInv;
 
 struct Node {
     uint idx;
@@ -199,8 +202,8 @@ vec3 matWood(vec3 p) {
 
 void main() {
     //vec3 closestPoint = (Model * tree[treeIdx].pos).xyz;
-    vec3 viewDir = normalize(worldPos - cameraPos);
-    vec3 rayPos = worldPos;
+    vec3 viewDir = normalize(rawPos - cameraPosInv);//normalize(worldPos - cameraPos);
+    vec3 rayPos = rawPos;
     int steps = 0;
     //check all tree node segments that can intersect with the current one
     //these are the node's child, parent, and parent's child
@@ -223,18 +226,11 @@ void main() {
     vec2 minDists = vec2(99999.9); //2 smallest distances
     */
     uint idx = treeIdx;
-    vec3 p3 = nodeWorldPos;
-    vec3 p0 = parentWorldPos;
-
-    //vec3 dir = normalize(p3 - p0);
-    float dist = distance(p0, p3);
-    float curve = 0.01;
-    float distFactor = 0.3;
-    vec3 p2 = p3 - dist * distFactor * dir;// + curve * randomVec3(p3);
-    vec3 p1 = p0 + dist * distFactor * parentDir;// - curve * randomVec3(p0);
+    
     float t = t_guess;
     float epsilon = width0 * 0.1;
     vec3 splinePoint = cubicSpline(p0, p1, p2, p3, t);
+    float dist = 99999;
     while (steps < 20 && dist > epsilon) {
         
         splinePoint = cubicSpline(p0, p1, p2, p3, t);
@@ -297,7 +293,8 @@ void main() {
     //vec3 color = pow(matWood(rayPos), vec3(.4545));
     vec3 color = vec3(0.6, 0.4, 0.1);
     vec3 lightDir = vec3(1.0, 0.0, 0.0);
-    float brightness = clamp(dot(lightDir, normalize(rayPos - splinePoint)), 0.1, 1.0);
+    vec3 normal = (Model * vec4(normalize(rayPos - splinePoint), 0.0)).xyz;
+    float brightness = clamp(dot(lightDir, normal), 0.1, 1.0);
     //float brightness = 1.0;
     //vec4 screenPos = VP * vec4(rayPos, 1.0);
     //gl_FragDepth = screenPos.z / screenPos.w;

@@ -142,7 +142,7 @@ vec3 getGradient(vec3 pos) {
 }
 
 void main() {
-	vec3 offsetNormal = normalize(rotatedNormal + 0.006 * getGradient(rawPos));
+	  vec3 offsetNormal = normalize(rotatedNormal + 0.006 * getGradient(rawPos));
     float brightness = clamp(dot(offsetNormal, vec3(1.0, 0.0, 0.0)), 0.2, 1.0);
     vec3 color = woodMaterial(rawPos, 5);
     FragColor = vec4(brightness * color, 1.0);
