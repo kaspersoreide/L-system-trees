@@ -59,6 +59,23 @@ vec3 splineDerivative(vec3 p0, vec3 p1, vec3 p2, vec3 p3, float t) {
         + 3 * t * t * (p3 - p2);
 }
 
+vec3 hermiteSpline(vec3 p0, vec3 p1, vec3 m0, vec3 m1, float t) {
+    float t2 = t * t;
+    float t3 = t2 * t;
+    return (2. * t3 - 3. * t2 + 1.) * p0
+         + (t3 - 2. * t2 + t) * m0
+         + (-2. * t3 + 3. * t2) * p1
+         + (t3 - t2) * m1;
+}
+
+vec3 hermiteDerivative(vec3 p0, vec3 p1, vec3 m0, vec3 m1, float t) {
+    float t2 = t * t;
+    return (6 * t2 - 6 * t) * p0
+         + (3 * t2 - 4 * t + 1) * m0
+         + (-6 * t2 + 6 * t) * p1
+         + (3 * t2 - 2 * t) * m1;
+}
+
 mat3 rotationMatrix(vec3 axis, float angle) {
     vec3 a = normalize(axis);
 
@@ -91,44 +108,44 @@ mat3 rotationMatrix(vec3 axis, float angle) {
 
 void main() {
     uint idx = gl_GlobalInvocationID.x + 1;
-    float t = float(gl_GlobalInvocationID.y + 1) / segmentsPerNode;
-    vec3 p3 = tree[idx].T[3].xyz;
+    float t = float(gl_GlobalInvocationID.y) / (segmentsPerNode);
+    vec3 p1 = tree[idx].T[3].xyz;
     vec3 p0 = tree[tree[idx].parent].T[3].xyz;
     float width1 = tree[idx].width;
     float width0 = tree[tree[idx].parent].width; 
-    float dist = distance(p0, p3);
-    float distFactor = 0.3;
-    vec3 p2 = p3 - dist * distFactor * tree[idx].T[0].xyz;
-    vec3 p1 = p0 + dist * distFactor * tree[tree[idx].parent].T[0].xyz;
-    float currentWidth = width1;//mix(width0, width1, t);
+    vec3 m0 = tree[tree[idx].parent].T[0].xyz;
+    vec3 m1 = tree[idx].T[0].xyz;
+    float currentWidth = mix(width0, width1, t);
 
-    vec3 center = cubicSpline(p0, p1, p2, p3, t);
+    vec3 center = hermiteSpline(p0, p1, m0, m1, t);//cubicSpline(p0, p1, p2, p3, t);
     //f is forward, along tangent
-    vec3 f = normalize(splineDerivative(p0, p1, p2, p3, t));
+    vec3 f = hermiteDerivative(p0, p1, m0, m1, t);//normalize(splineDerivative(p0, p1, p2, p3, t));
     vec3 r = normalize(cross(f, vec3(-f.y, f.z, f.x)));
     mat3 R = rotationMatrix(f, PI2 / verticesPerSegment);
     //TODO double check vIdx
     uint vIdx = (gl_GlobalInvocationID.x * segmentsPerNode + gl_GlobalInvocationID.y) * verticesPerSegment;
-    uint pIdx = ((tree[idx].parent) * segmentsPerNode + gl_GlobalInvocationID.y) * verticesPerSegment;
+    uint pIdx = (tree[idx].parent) * segmentsPerNode * verticesPerSegment;
+    //if (gl_GlobalInvocationID.y == 0) return;
     for (int i = 0; i < verticesPerSegment; i++) {
         vertices[vIdx + i] = vec4(center + currentWidth * r, uintBitsToFloat(idx));
         normals[vIdx + i] = vec4(r, 0.0);
         r = R * r;
         uint iIdx = (vIdx + i) * 6;
+        uint offset = (i < verticesPerSegment - 1) ? i + 1 : 0;
         //if (gl_GlobalInvocationID.y == 0) continue;
         indices[iIdx++] = vIdx + i;
         indices[iIdx++] = (gl_GlobalInvocationID.y == 0) 
             ? pIdx - verticesPerSegment + i 
             : vIdx - verticesPerSegment + i;
-        indices[iIdx++] = vIdx + ((i < verticesPerSegment - 1) ? 1 + i : 0);
+        indices[iIdx++] = vIdx + offset;
 
         indices[iIdx++] = (gl_GlobalInvocationID.y == 0) 
             ? pIdx - verticesPerSegment + i
             : vIdx - verticesPerSegment + i;
         indices[iIdx++] = (gl_GlobalInvocationID.y == 0) 
-            ? pIdx - verticesPerSegment + ((i < verticesPerSegment - 1) ? i + 1 : 0)
-            : vIdx - verticesPerSegment + ((i < verticesPerSegment - 1) ? i + 1 : 0);
-        indices[iIdx++] = vIdx + ((i < verticesPerSegment - 1) ? 1 + i : 0);
+            ? pIdx - verticesPerSegment + offset
+            : vIdx - verticesPerSegment + offset;
+        indices[iIdx++] = vIdx + offset;
     }
     
 }

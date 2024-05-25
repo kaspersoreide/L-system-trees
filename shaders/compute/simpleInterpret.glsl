@@ -108,6 +108,15 @@ float floatConstruct(uint m) {
 // Pseudo-random value in half-open range [0:1].
 float random(uint x) { return floatConstruct(hash(x)); }
 
+vec3 randomVec3(uint s) {
+    float x = random(s);
+    s = hash(s);
+    float y = random(s);
+    s = hash(s);
+    float z = random(s);
+    return normalize(vec3(x, y, z) - 0.5);
+}
+
 const float PI = 3.14159265358979323846;
 
 struct State {
@@ -157,7 +166,6 @@ void main() {
                 break;
             case 91:    // [ push state
                 stack[++top] = currentState;
-                currentState.width *= 0.6;              
                 break;
             case 93:    // ] pop state
                 //put leaf at end of branch
@@ -166,7 +174,7 @@ void main() {
                 
                 break;
             case 33:    // ! decrement segment width
-                currentState.width *= 0.7;
+                currentState.width *= 0.8;
                 break;
             case 76:    // L (BIG L) make leaf
                 //todo: put leaf transform matrix into a buffer, render leaves using instancing and buffer as uniform buffer
@@ -177,8 +185,12 @@ void main() {
                 lastIdx++;
                 //move currentstate forward
                 vec3 dir = currentState.transform[0].xyz;
-                float pull = 1.0;//- abs(dot(dir, vec3(0.0, -1.0, 0.0)));
-                currentState.transform = translate(branchLength * dir + 0.1 * pull * currentState.width * vec3(0.0, -1.0, 0.0)) * currentState.transform;
+                //float pull = 1.0;//- abs(dot(dir, vec3(0.0, -1.0, 0.0)));
+                //currentState.transform = translate(branchLength * dir + 0.1 * pull * currentState.width * vec3(0.0, -1.0, 0.0)) * currentState.transform;
+                uint seed = leafIdx + lastIdx + top;
+                vec3 fluctuation = 0.2 * randomVec3(seed); 
+                vec3 tropism = 0.4 * vec3(0.0, 1.0, 0.0);
+                currentState.transform = translate(branchLength * normalize(dir + fluctuation + tropism)) * currentState.transform;
                 //create child node, set parent and other data
                 tree[lastIdx].T = currentState.transform;
                 tree[lastIdx].parent = currentState.treeIdx;

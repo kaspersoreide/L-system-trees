@@ -127,7 +127,7 @@ vec3 woodMaterial(vec3 pos, int octaves) {
 		float c = pow(2, i);
 		noiseValue += 0.9 * (0.5 * snoise(c * pos) + 0.5) / c;
 	}
-	if (noiseValue < 0.5) noiseValue -= 0.2;
+	//if (noiseValue < 0.6) noiseValue -= 0.2;
 	return noiseValue * vec3(.82, .82, .82);
 }
 
@@ -142,7 +142,7 @@ vec3 getGradient(vec3 pos) {
 }
 
 void main() {
-	  vec3 offsetNormal = normalize(rotatedNormal + 0.006 * getGradient(rawPos));
+	  vec3 offsetNormal = normalize(rotatedNormal + 0.003 * getGradient(rawPos));
     float brightness = clamp(dot(offsetNormal, vec3(1.0, 0.0, 0.0)), 0.2, 1.0);
     vec3 color = woodMaterial(rawPos, 5);
     FragColor = vec4(brightness * color, 1.0);

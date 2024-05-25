@@ -49,8 +49,8 @@ void Tree::generateSplines() {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->treeBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, turtle->treeBuffer);
 
-    segmentsPerNode = 10;
-    verticesPerSegment = 8;
+    segmentsPerNode = 16;
+    verticesPerSegment = 16;
     glUniform1ui(0, segmentsPerNode);
     glUniform1ui(1, verticesPerSegment);
     indexCount = segmentsPerNode * verticesPerSegment * lastIdx * 6;
@@ -109,7 +109,7 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     Model = translate(position) * scale(mat4(1.0f), vec3(treeScale));
 	//
     lsystem = new Lsystem();
-    /*lsystem->setAxiom("A");
+    lsystem->setAxiom("A");
     lsystem->addRule('A', "[&F[###^^L]!A]/////#[&F[###^^L]!A]///////#[&F[###^^L]!A]", 1.0f);
     lsystem->addRule('F', "S/////F", 1.0f);
     lsystem->addRule('S', "F[###^^L]", 1.0f);
@@ -121,10 +121,16 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     lsystem->addRule('/', "/", 1.0f);
     lsystem->addRule('!', "!", 1.0f);
     lsystem->addRule('#', "#", 1.0f);
-    */
-    lsystem->addRule('F', "F[++!FL]/F[--!FL]F", 1.0f);
-    //lsystem->addRule('F', "F[+FL]F", 1.0f);
-	lsystem->setAxiom("F");
+    //lsystem->addRule('X', "FFFA", 1.0f);
+    //lsystem->addRule('A', "FA", 0.6f);
+    
+    //lsystem->addRule('A', "F[!!^F/L][!!&F\\L]FA", 0.2f);
+    //lsystem->addRule('A', "F[!!+F/L][!!-F\\L]FA", 0.2f);
+    //lsystem->addRule('A', "F[!!^FA]!!&FA", 0.1f);
+    //lsystem->addRule('A', "F[++!FL]/F[--!FL]A", 0.4f);
+    //lsystem->addRule('L', "!F/F[+/L]F[-\\L]/A", 1.0f);
+    //lsystem->addRule('F', "F+^F", 1.0f);
+	//lsystem->setAxiom("X");
     lsystem->loadProductionsBuffer();
     lsystem->iterate(iterations);
 
@@ -136,9 +142,23 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &lastIdx);
     //cout << "lastIdx: " << lastIdx << "\n";
     
-    generateBoundingBoxes();
+    //generateBoundingBoxes();
+    generateSplines();
 
     generateLeafVertexArray();
+
+    //printing
+    /*
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, elementBuffer);
+    vector<uint> bufferdata;
+    bufferdata.resize(100);
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 100 * sizeof(uint), bufferdata.data());
+    cout << "productions buffer: \n";
+    for (uint c : bufferdata) {
+        cout << c << ", ";
+    } 
+    cout << "\n";
+    */
 }
 
 void Tree::render(GLuint shader, mat4 VP, vec3 camPos, GLuint leafShader) {
@@ -164,9 +184,11 @@ void Tree::render(GLuint shader, mat4 VP, vec3 camPos, GLuint leafShader) {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->treeBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, turtle->treeBuffer);
     glBindVertexArray(vertexArray);
-    glDrawArrays(GL_TRIANGLES, 0, 36 * lastIdx);
-    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-    //glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
-    //glPointSize(5);
-    //glDrawArrays(GL_POINTS, 0, 10 * 10 * lastIdx);
+    
+    //normal rendering (splines)
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+    glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+
+    //raycasting
+    //glDrawArrays(GL_TRIANGLES, 0, 36 * lastIdx);
 }

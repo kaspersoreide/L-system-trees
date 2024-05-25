@@ -48,6 +48,7 @@ void Lsystem::iterate(int n) {
         if (c == 'F') n_nodes++;
         uintString.push_back(c);
     }
+    //cout << product << '\n';
     int stringSize = uintString.size();
     glCreateBuffers(1, &inputBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, inputBuffer);
