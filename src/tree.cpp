@@ -139,7 +139,7 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     
     
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->treeBuffer);
-    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint32_t), &lastIdx);
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(uint), &lastIdx);
     //cout << "lastIdx: " << lastIdx << "\n";
     
     //generateBoundingBoxes();
