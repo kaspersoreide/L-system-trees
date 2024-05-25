@@ -4,17 +4,21 @@ layout(location = 0) in vec4 pos;
 
 uniform layout(location = 0) mat4 Model;
 uniform layout(location = 1) mat4 MVP;
+uniform layout(location = 2) vec3 cameraPos;
 uniform layout(location = 3) mat4 VP;
+uniform layout(location = 4) mat4 ModelInv;
 
 out vec3 worldPos;
 flat out uint treeIdx;
 out float t_guess;
-flat out vec3 nodeWorldPos;
-flat out vec3 parentWorldPos;
-flat out vec3 dir;
-flat out vec3 parentDir;
+flat out vec3 p0;
+flat out vec3 p1;
+flat out vec3 p2;
+flat out vec3 p3;
 flat out float width0;
 flat out float width1;
+out vec3 rawPos;
+out vec3 cameraPosInv;
 
 
 struct Node {
@@ -51,19 +55,22 @@ vec3 getParentDir(uint idx) {
 }
 
 void main() {
+    cameraPosInv = (ModelInv * vec4(cameraPos, 1.0)).xyz;
     vec4 vertPos = vec4(pos.xyz, 1.0);
+    rawPos = vertPos.xyz;
     worldPos = (Model * vertPos).xyz;
     uint idx = floatBitsToUint(pos[3]);
-    vec3 p1 = (Model * tree[idx].T[3]).xyz;
-    vec3 p0 = (Model * tree[tree[idx].parent].T[3]).xyz;
-    dir = normalize(p1 - p0);
-    parentDir = getParentDir(idx);
-    t_guess = closestParameter(p0, p1, worldPos);
-    nodeWorldPos = p1;
-    parentWorldPos = p0;
+    p3 = (tree[idx].T[3]).xyz;
+    p0 = (tree[tree[idx].parent].T[3]).xyz;
+    vec3 dir = (tree[idx].T[0]).xyz;
+    vec3 parentDir = (tree[tree[idx].parent].T[0]).xyz;
+    float dist = distance(p0, p3);
+    float distFactor = 0.3;
+    p2 = p3 - dist * distFactor * dir;
+    p1 = p0 + dist * distFactor * parentDir;
+    t_guess = closestParameter(p0, p3, rawPos);
     treeIdx = idx;
     width0 = tree[tree[idx].parent].width;
     width1 = tree[idx].width;
-    
     gl_Position = MVP * vertPos;
 }

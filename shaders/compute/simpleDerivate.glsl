@@ -1,16 +1,17 @@
 #version 430 core
 
-layout (local_size_x = 32) in;
+layout (local_size_x = 1) in;
 
 layout (binding = 0) coherent readonly buffer block0
 {
-    uint input_data[];
+    uint stringInLength;
+    uint stringIn[];
 };
 
 layout (binding = 1) coherent writeonly buffer block1
 {
-    //x is index in productions, y is length of output string
-    uvec2 output_data[];
+    uint stringOutLength;
+    uint stringOut[];
 };
 
 struct Production {
@@ -20,7 +21,7 @@ struct Production {
     uint successor[64]; 
 };
 
-layout (binding = 2) coherent readonly buffer block2
+layout (binding = 1) coherent readonly buffer block3
 {
     uint n_productions;
     Production productions[];
@@ -52,20 +53,29 @@ float floatConstruct(uint m) {
 // Pseudo-random value in half-open range [0:1].
 float random(uint x) { return floatConstruct(hash(x)); }
 
+uniform layout (location = 0) uint seed;
 
 void main() {
-    uint id = gl_GlobalInvocationID.x;
-    uint stringId = 0;
-    float randomValue = random(id + input_data[id]);
-    float baseValue = 0.0;
-    for (int i = 0; i < n_productions; i++) {
-        if (productions[i].predecessor == input_data[id]) {
-            if (randomValue <= baseValue + productions[i].proability) {
-                stringId = i;
-                break;
+    uint idx = 0;
+    for (uint i = 0; i < stringInLength; i++) {
+        float randomValue = random(seed);
+        float baseValue = 0.0;
+        int found = 0;
+        for (int j = 0; j < n_productions; j++) {
+            if (productions[j].predecessor == stringIn[i]) {
+                if (randomValue <= baseValue + productions[j].proability) {
+                    for (uint k = 0; k < productions[j].size; k++) {
+                        stringOut[idx++] = productions[j].successor[k];
+                    }
+                    found = 1;
+                    break;
+                }
+                baseValue += productions[i].proability;
             }
-            baseValue += productions[i].proability;
         }
+        if (!found) {
+            stringOut[idx++] = stringIn[i];
+        }
+        seed = hash(seed);
     }
-    output_data[id] = uvec2(stringId, productions[stringId].size);
-}   
+}

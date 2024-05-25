@@ -62,14 +62,14 @@ void Turtle::buildGPU(GLuint stringBuffer, int cylinderSegments) {
     glGenBuffers(1, &leafModelsBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, leafModelsBuffer);
     //TODO: properly set size of leafmodelsBuffer
-    glBufferData(GL_SHADER_STORAGE_BUFFER, 3 * bufferSize, NULL, GL_STATIC_DRAW); 
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 4 * bufferSize, NULL, GL_STATIC_DRAW); 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, leafModelsBuffer);
 
     glUniform1ui(0, bufferSize / sizeof(GLuint)); //string size (number of characters)
     glUniform1f(1, state.width);
     glUniform1f(2, rotationAngle);
     glUniform1i(3, cylinderSegments);
-    glUniform1f(4, 5 * state.width);
+    glUniform1f(4, 0.9);
     glDispatchCompute(1, 1, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     

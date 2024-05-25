@@ -15,6 +15,13 @@ public:
         float probability;
     };
 
+    struct ShaderProduction {
+        uint in;
+        float probability;
+        uint outputLength;
+        uint output[64];
+    };
+
     Lsystem() {};
     ~Lsystem();
     void addRule(char in, string out, float probability);
@@ -30,4 +37,6 @@ public:
     GLuint inputBuffer;
     GLuint outputBuffer;
     GLuint productionsBuffer;
+    uint n_nodes = 0;
+    uint n_leaves = 0;
 };

@@ -1,7 +1,5 @@
 #version 430 core
 
-#define N_PRODUCTIONS 7
-
 layout (local_size_x = 32) in;
 
 layout (binding = 0) coherent readonly buffer block1
@@ -14,21 +12,25 @@ layout (binding = 1) coherent writeonly buffer block2
     uint output_data[];
 };
 
-layout (binding = 2) coherent readonly buffer productions
+struct Production {
+    uint predecessor;
+    float proability;
+    uint size;
+    uint successor[64]; 
+};
+
+layout (binding = 2) coherent readonly buffer block3
 {
-    uint inputs[N_PRODUCTIONS];
-    uint offsets[N_PRODUCTIONS];
-    uint lengths[N_PRODUCTIONS];
-    float probabilities[N_PRODUCTIONS];
-    uint string[];
+    uint n_productions;
+    Production productions[];
 };
 
 void main() {
     uint id = gl_GlobalInvocationID.x;
     uint prodIdx = input_data[id].x;
-    uint stringLength = lengths[prodIdx];
+    uint stringLength = productions[prodIdx].size;
     for (uint i = 0; i < stringLength; i++) {
         uint outIdx = input_data[id].y + i;
-        output_data[outIdx] = string[offsets[prodIdx] + i];
+        output_data[outIdx] = productions[prodIdx].successor[i];
     }
 }
