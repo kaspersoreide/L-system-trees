@@ -17,6 +17,7 @@ out vec4 FragColor;
 uniform layout(location = 0) mat4 Model;
 uniform layout(location = 2) vec3 cameraPos;
 uniform layout(location = 3) mat4 VP;
+uniform layout(location = 4) int seed;
 
 //
 // Description : Array and textureless GLSL 2D/3D/4D simplex
@@ -144,6 +145,6 @@ vec3 getGradient(vec3 pos) {
 void main() {
 	  vec3 offsetNormal = normalize(rotatedNormal + 0.003 * getGradient(rawPos));
     float brightness = clamp(dot(offsetNormal, vec3(1.0, 0.0, 0.0)), 0.2, 1.0);
-    vec3 color = woodMaterial(rawPos, 5);
+    vec3 color = woodMaterial(rawPos + seed, 5);
     FragColor = vec4(brightness * color, 1.0);
 }

@@ -106,21 +106,60 @@ float snoise(vec3 v) {
   return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1),
                                 dot(p2,x2), dot(p3,x3) ) );
 }
+/* End of copied code */
+////////////
 
 
-vec3 leafMaterial(vec3 pos, int octaves) {
-	float noiseValue = 0.0;
-	for (int i = 0; i < octaves; i++) {
-		float c = pow(2, i);
-		noiseValue += 0.9 * (0.5 * snoise(c * pos) + 0.5) / c;
-	}
-	//if (noiseValue < 0.6) noiseValue -= 0.2;
-	return noiseValue * vec3(.2, .82, .2);
+
+// A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
+uint hash(uint x) {
+	x += (x << 10u);
+	x ^= (x >> 6u);
+	x += (x << 3u);
+	x ^= (x >> 11u);
+	x += (x << 15u);
+	return x;
 }
 
+vec2 hash(vec2 x) { 
+    return fract(sin(vec2(
+        dot(x, vec2(13.4, 57.322)),
+        dot(x, vec2(-531.2, 87.22))
+    )) * 7492.32119); 
+}
+
+float voronoiNoise(vec2 pos) {
+    vec2 p = floor(pos);
+    vec2 f = fract(pos);
+    float value = 0.0;
+    for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+            vec2 o = vec2(i, j);
+            vec2 r = o - f + hash(p + o); 
+            value += 1. / pow(dot(r, r), 8.);
+        }
+    }
+    return pow(1. / value, 0.0625);
+}
+
+vec3 leafMaterial(vec3 pos, int octaves) {
+    float noiseValue = 0.0;
+    for (int i = 0; i < octaves; i++) {
+        float c = pow(2, i);
+        noiseValue += 0.9 * (0.5 * snoise(c * pos) + 0.5) / c;
+    }
+    //if (noiseValue < 0.6) noiseValue -= 0.2;
+    return noiseValue * vec3(.2, .82, .2);
+}
 void main() {
     float leafyness = (abs(u.x) < 0.02 * sin(100 * u.y) + 0.4 * cos(PI * u.y)) ? 1.0 : 0.0;
-    
-    FragColor = vec4(leafMaterial(vec3(u * 5, 0.0), 5), leafyness);
-    //FragColor = vec4(1.0);
+    //FragColor = vec4(leafMaterial(vec3(u * 5, 0.0), 5), leafyness);
+    float noiseValue = 0.0;
+    for (int i = 1; i < 6; i++) {
+        float d = pow(2, i);
+        noiseValue += voronoiNoise(5 * d * u) / d;
+    }
+    vec3 color0 = vec3(0.0, 1.0, 0.0);
+    vec3 color1 = 0.5 * vec3(1.0, 1.0, 1.0);
+    FragColor = vec4(mix(color0, color1, noiseValue), leafyness);
 }

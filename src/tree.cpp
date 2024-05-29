@@ -43,7 +43,7 @@ void Tree::generateLeafVertexArray() {
 }
 
 void Tree::generateLeafTexture() {
-    GLsizei res = 256;
+    GLsizei res = 512;
     glGenTextures(1, &leafTexture);
 	glBindTexture(GL_TEXTURE_2D, leafTexture);
 
@@ -99,7 +99,7 @@ void Tree::generateLeafTexture() {
     glUseProgram(genLeafShader);
     glBindVertexArray(VAO);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-    glViewport(0, 0, 256, 256);
+    glViewport(0, 0, res, res);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -118,8 +118,7 @@ void Tree::generateSplines() {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->treeBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, turtle->treeBuffer);
 
-    segmentsPerNode = 16;
-    verticesPerSegment = 16;
+    
     glUniform1ui(0, segmentsPerNode);
     glUniform1ui(1, verticesPerSegment);
     indexCount = segmentsPerNode * verticesPerSegment * lastIdx * 6;
@@ -192,11 +191,11 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     lsystem->addRule('!', "!", 1.0f);
     lsystem->addRule('#', "#", 1.0f);
     */
-    lsystem->addRule('X', "FFFA", 1.0f);
+    lsystem->addRule('X', "FFFF!A", 1.0f);
     lsystem->addRule('A', "FA", 0.6f);
-    lsystem->addRule('A', "F[!!^F/L][!!&F\\L]FA", 0.2f);
-    lsystem->addRule('A', "F[!!+F/L][!!-F\\L]FA", 0.2f);
-    lsystem->addRule('L', "!F/F[+/L]F[-\\L]/A", 1.0f);
+    //lsystem->addRule('A', "F[!!^F/L][!!&F\\L]FA", 0.2f);
+    lsystem->addRule('A', "F[!!+F/L][!!-F\\L]FA", 0.4f);
+    lsystem->addRule('L', "!F/[+/L][-\\L]/A", 1.0f);
     //lsystem->addRule('F', "F+^F", 1.0f);
 	lsystem->setAxiom("X");
     lsystem->loadProductionsBuffer();
@@ -211,6 +210,8 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     //cout << "lastIdx: " << lastIdx << "\n";
     
     //generateBoundingBoxes();
+    segmentsPerNode = 4;
+    verticesPerSegment = 6;
     generateSplines();
 
     generateLeafVertexArray();
@@ -240,6 +241,7 @@ void Tree::render(GLuint shader, mat4 VP, vec3 camPos, GLuint leafShader) {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->leafModelsBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, turtle->leafModelsBuffer);
     glUniformMatrix4fv(0, 1, GL_FALSE, &MVP[0][0]);
+    glUniformMatrix4fv(1, 1, GL_FALSE, &Model[0][0]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, leafTexture);
     glUniform1ui(glGetUniformLocation(leafShader, "leafTexture"), 0);
