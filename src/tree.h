@@ -18,4 +18,5 @@ protected:
     GLuint vertexArray, leafVertexArray, leafTexture, elementBuffer;
     uint lastIdx, lastLeafIdx, leafVertexCount, indexCount;
     uint segmentsPerNode, verticesPerSegment;
+    int seed;
 };

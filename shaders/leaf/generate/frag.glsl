@@ -5,6 +5,8 @@ in vec2 u;
 
 out vec4 FragColor;
 
+uniform layout (location = 0) int seed;
+
 //
 // Description : Array and textureless GLSL 2D/3D/4D simplex
 //               noise functions.
@@ -131,15 +133,25 @@ vec2 hash(vec2 x) {
 float voronoiNoise(vec2 pos) {
     vec2 p = floor(pos);
     vec2 f = fract(pos);
-    float value = 0.0;
+    float nextMinValue = 9999.9;
+    float minValue = 9999.9;
     for (int i = -1; i <= 1; i++) {
         for (int j = -1; j <= 1; j++) {
             vec2 o = vec2(i, j);
             vec2 r = o - f + hash(p + o); 
-            value += 1. / pow(dot(r, r), 8.);
+            float d = dot(r, r);
+            if (d < nextMinValue) {
+                if (d < minValue) {
+                    nextMinValue = minValue;
+                    minValue = d;
+                }
+                else {
+                    nextMinValue = d;
+                }
+            } 
         }
     }
-    return pow(1. / value, 0.0625);
+    return nextMinValue - minValue;
 }
 
 vec3 leafMaterial(vec3 pos, int octaves) {
@@ -155,11 +167,12 @@ void main() {
     float leafyness = (abs(u.x) < 0.02 * sin(100 * u.y) + 0.4 * cos(PI * u.y)) ? 1.0 : 0.0;
     //FragColor = vec4(leafMaterial(vec3(u * 5, 0.0), 5), leafyness);
     float noiseValue = 0.0;
-    for (int i = 1; i < 6; i++) {
+    for (int i = 1; i < 7; i++) {
         float d = pow(2, i);
-        noiseValue += voronoiNoise(5 * d * u) / d;
+        noiseValue += voronoiNoise(5 * d * vec2(abs(u.x), u.y)) / d;
     }
-    vec3 color0 = vec3(0.0, 1.0, 0.0);
-    vec3 color1 = 0.5 * vec3(1.0, 1.0, 1.0);
-    FragColor = vec4(mix(color0, color1, noiseValue), leafyness);
+    //float noiseValue = voronoiNoise(5 * u);
+    vec3 color0 = vec3(1.0, 1.0, 0.7);
+    vec3 color1 = 0.5 * vec3(0.0, 1.0, 0.0);
+    FragColor = vec4(mix(color1, color0, noiseValue), leafyness);
 }

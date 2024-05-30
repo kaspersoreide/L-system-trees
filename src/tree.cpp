@@ -2,6 +2,7 @@
 #include <iostream>
 #include "loadshaders.h"
 #include <glm/gtx/transform.hpp>
+#include <random>
 
 void Tree::generateLeafVertexArray() {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->leafModelsBuffer);
@@ -97,6 +98,7 @@ void Tree::generateLeafTexture() {
 	);
     GLuint genLeafShader = loadShaders("shaders/leaf/generate/vert.glsl", "shaders/leaf/generate/frag.glsl");
     glUseProgram(genLeafShader);
+    glUniform1i(0, seed);
     glBindVertexArray(VAO);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     glViewport(0, 0, res, res);
@@ -212,11 +214,12 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     //generateBoundingBoxes();
     segmentsPerNode = 4;
     verticesPerSegment = 6;
+    seed = std::rand();
     generateSplines();
 
     generateLeafVertexArray();
     generateLeafTexture();
-
+    
     //printing
     /*
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, elementBuffer);
@@ -233,7 +236,7 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
 
 void Tree::render(GLuint shader, mat4 VP, vec3 camPos, GLuint leafShader) {
     mat4 MVP = VP * Model;
-    mat4 ModelInv = inverse(Model);
+    //mat4 ModelInv = inverse(Model);
 
     //leaves
     glBindVertexArray(leafVertexArray);
@@ -246,7 +249,6 @@ void Tree::render(GLuint shader, mat4 VP, vec3 camPos, GLuint leafShader) {
     glBindTexture(GL_TEXTURE_2D, leafTexture);
     glUniform1ui(glGetUniformLocation(leafShader, "leafTexture"), 0);
     glDrawArraysInstanced(GL_TRIANGLES, 0, leafVertexCount, lastLeafIdx + 1);
-    //glDrawArrays(GL_TRIANGLES, 0, leafVertexCount);
 
     //tree
     glUseProgram(shader);
@@ -254,15 +256,14 @@ void Tree::render(GLuint shader, mat4 VP, vec3 camPos, GLuint leafShader) {
 	glUniformMatrix4fv(1, 1, GL_FALSE, &MVP[0][0]);
     glUniformMatrix4fv(3, 1, GL_FALSE, &VP[0][0]);
 	glUniform3fv(2, 1, &camPos[0]);
-    glUniformMatrix4fv(4, 1, GL_FALSE, &ModelInv[0][0]);
+    glUniform1i(4, seed);
+    //glUniformMatrix4fv(4, 1, GL_FALSE, &ModelInv[0][0]);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->treeBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, turtle->treeBuffer);
     glBindVertexArray(vertexArray);
-    
     //normal rendering (splines)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
     glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
-
     //raycasting
-    //glDrawArrays(GL_TRIANGLES, 0, 36 * lastIdx);
+    //glDrawArrays(GL_TRIANGLES, 0, 36 * lastIdx);    
 }
