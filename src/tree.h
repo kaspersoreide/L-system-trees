@@ -9,6 +9,7 @@ public:
     void render(GLuint shader, mat4 VP, vec3 camPos, GLuint leafShader);
 protected:
     void generateLeafVertexArray();
+    void generateLeafTexture();
     void generateSplines();
     void generateBoundingBoxes();
     Lsystem* lsystem;
@@ -17,4 +18,5 @@ protected:
     GLuint vertexArray, leafVertexArray, leafTexture, elementBuffer;
     uint lastIdx, lastLeafIdx, leafVertexCount, indexCount;
     uint segmentsPerNode, verticesPerSegment;
+    int seed;
 };

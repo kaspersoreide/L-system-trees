@@ -108,13 +108,13 @@ mat3 rotationMatrix(vec3 axis, float angle) {
 
 void main() {
     uint idx = gl_GlobalInvocationID.x + 1;
-    float t = float(gl_GlobalInvocationID.y) / (segmentsPerNode);
+    float t = float(gl_GlobalInvocationID.y + 1) / (segmentsPerNode);
     vec3 p1 = tree[idx].T[3].xyz;
     vec3 p0 = tree[tree[idx].parent].T[3].xyz;
     float width1 = tree[idx].width;
     float width0 = tree[tree[idx].parent].width; 
-    vec3 m0 = tree[tree[idx].parent].T[0].xyz;
-    vec3 m1 = tree[idx].T[0].xyz;
+    vec3 m0 = 1.0 * tree[tree[idx].parent].T[0].xyz;
+    vec3 m1 = 1.0 * tree[idx].T[0].xyz;
     float currentWidth = mix(width0, width1, t);
 
     vec3 center = hermiteSpline(p0, p1, m0, m1, t);//cubicSpline(p0, p1, p2, p3, t);

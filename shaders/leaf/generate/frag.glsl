@@ -1,23 +1,11 @@
 #version 430
+#define PI 3.14159265358979323846
 
-in vec3 worldPos;
-flat in uint treeIdx;
-in float t_guess;
-flat in vec3 nodeWorldPos;
-flat in vec3 parentWorldPos;
-flat in vec3 dir;
-flat in vec3 parentDir;
-flat in float width0;
-flat in float width1;
-in vec3 rotatedNormal;
-in vec3 rawPos;
+in vec2 u;
 
 out vec4 FragColor;
 
-uniform layout(location = 0) mat4 Model;
-uniform layout(location = 2) vec3 cameraPos;
-uniform layout(location = 3) mat4 VP;
-uniform layout(location = 4) int seed;
+uniform layout (location = 0) int seed;
 
 //
 // Description : Array and textureless GLSL 2D/3D/4D simplex
@@ -120,31 +108,71 @@ float snoise(vec3 v) {
   return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1),
                                 dot(p2,x2), dot(p3,x3) ) );
 }
+/* End of copied code */
+////////////
 
 
-vec3 woodMaterial(vec3 pos, int octaves) {
-	float noiseValue = 0.0;
-	for (int i = 0; i < octaves; i++) {
-		float c = pow(2, i);
-		noiseValue += 0.9 * (0.5 * snoise(c * pos) + 0.5) / c;
-	}
-	//if (noiseValue < 0.6) noiseValue -= 0.2;
-	return noiseValue * vec3(.82, .82, .82);
+
+// A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
+uint hash(uint x) {
+	x += (x << 10u);
+	x ^= (x >> 6u);
+	x += (x << 3u);
+	x ^= (x >> 11u);
+	x += (x << 15u);
+	return x;
 }
 
-vec3 getGradient(vec3 pos) {
-	float delta = 0.01;
-	float noiseValue = snoise(pos);
-	float c = 15;
-	float dsdx = (snoise(c * vec3(pos.x + delta, pos.yz)) - noiseValue) / delta;
-	float dsdy = (snoise(c * vec3(pos.x, pos.y + delta, pos.z)) - noiseValue) / delta;
-	float dsdz = (snoise(c * vec3(pos.xy, pos.z + delta)) - noiseValue) / delta;
-	return vec3(dsdx, dsdy, dsdz);
+vec2 hash(vec2 x) { 
+    return fract(sin(vec2(
+        dot(x, vec2(13.4, 57.322)),
+        dot(x, vec2(-531.2, 87.22))
+    )) * 7492.32119); 
 }
 
+float voronoiNoise(vec2 pos) {
+    vec2 p = floor(pos);
+    vec2 f = fract(pos);
+    float nextMinValue = 9999.9;
+    float minValue = 9999.9;
+    for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+            vec2 o = vec2(i, j);
+            vec2 r = o - f + hash(p + o); 
+            float d = dot(r, r);
+            if (d < nextMinValue) {
+                if (d < minValue) {
+                    nextMinValue = minValue;
+                    minValue = d;
+                }
+                else {
+                    nextMinValue = d;
+                }
+            } 
+        }
+    }
+    return nextMinValue - minValue;
+}
+
+vec3 leafMaterial(vec3 pos, int octaves) {
+    float noiseValue = 0.0;
+    for (int i = 0; i < octaves; i++) {
+        float c = pow(2, i);
+        noiseValue += 0.9 * (0.5 * snoise(c * pos) + 0.5) / c;
+    }
+    //if (noiseValue < 0.6) noiseValue -= 0.2;
+    return noiseValue * vec3(.2, .82, .2);
+}
 void main() {
-	  vec3 offsetNormal = normalize(rotatedNormal + 0.003 * getGradient(rawPos));
-    float brightness = clamp(dot(offsetNormal, vec3(1.0, 0.0, 0.0)), 0.2, 1.0);
-    vec3 color = woodMaterial(rawPos + seed, 5);
-    FragColor = vec4(brightness * color, 1.0);
+    float leafyness = (abs(u.x) < 0.02 * sin(100 * u.y) + 0.4 * cos(PI * u.y)) ? 1.0 : 0.0;
+    //FragColor = vec4(leafMaterial(vec3(u * 5, 0.0), 5), leafyness);
+    float noiseValue = 0.0;
+    for (int i = 1; i < 7; i++) {
+        float d = pow(2, i);
+        noiseValue += voronoiNoise(5 * d * vec2(abs(u.x), u.y)) / d;
+    }
+    //float noiseValue = voronoiNoise(5 * u);
+    vec3 color0 = vec3(1.0, 1.0, 0.7);
+    vec3 color1 = 0.5 * vec3(0.0, 1.0, 0.0);
+    FragColor = vec4(mix(color1, color0, noiseValue), leafyness);
 }

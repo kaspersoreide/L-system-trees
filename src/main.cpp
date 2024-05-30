@@ -44,7 +44,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 	}
 	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
 		vec3 plantingPos = vec3(playerPos.x - sinf(angles.x), 0.0f, playerPos.z - cosf(angles.x));
-		trees.push_back(Tree(plantingPos, 1.0f, 45.0f, 0.2, 0.97, 5 ));
+		trees.push_back(Tree(plantingPos, 1.0f, 45.0f, 0.3, 0.97,8 ));
 	}
 	/*if (key == GLFW_KEY_E) {
 		if (action == GLFW_PRESS) camera.rot[0] = true;
@@ -143,10 +143,10 @@ int main() {
 	init();
 	
 	GLuint treeShader = loadShaders("shaders/tree/raycasting/vert.glsl", "shaders/tree/raycasting/frag.glsl");
-	GLuint leafShader = loadShaders("shaders/tree/leaf_vert.glsl", "shaders/tree/leaf_frag.glsl");
+	GLuint leafShader = loadShaders("shaders/leaf/render/vert.glsl", "shaders/leaf/render/frag.glsl");
 	GLuint simpleTreeShader = loadShaders("shaders/tree/basic/vert.glsl", "shaders/tree/basic/frag.glsl");
 
-	trees.push_back(Tree(vec3(0.0f, 0.0f, -8.0f), 2.0f, 22.7f, 0.2f, 0.97, 7, 0));
+	trees.push_back(Tree(vec3(0.0f, 0.0f, -8.0f), 2.0f, 22.7f, 0.2f, 0.97, 4, 0));
 	mat4 Projection = perspective(1.2f, 16.0f / 9, 0.1f, 1000.0f);
 	mat4 playerModel;
 
