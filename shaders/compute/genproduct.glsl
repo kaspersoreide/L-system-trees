@@ -1,6 +1,6 @@
 #version 430 core
 
-layout (local_size_x = 32) in;
+layout (local_size_x = 1) in;
 
 layout (binding = 0) coherent readonly buffer block1
 {
@@ -26,6 +26,7 @@ layout (binding = 2) coherent readonly buffer block3
 };
 
 void main() {
+    
     uint id = gl_GlobalInvocationID.x;
     uint prodIdx = input_data[id].x;
     uint stringLength = productions[prodIdx].size;
@@ -33,4 +34,9 @@ void main() {
         uint outIdx = input_data[id].y + i;
         output_data[outIdx] = productions[prodIdx].successor[i];
     }
+    
+    //uint id = gl_GlobalInvocationID.x;
+    //uint outIdx = input_data[id].y;
+    //uint prodIdx = input_data[id].x;
+    //output_data[outIdx] = (prodIdx + 100) * 100;//prodIdx * 100;
 }

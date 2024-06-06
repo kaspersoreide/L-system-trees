@@ -179,11 +179,11 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     Model = translate(position) * scale(mat4(1.0f), vec3(treeScale));
 	//
     lsystem = new Lsystem();
-    /*
+    
     lsystem->setAxiom("A");
-    lsystem->addRule('A', "[&F[###^^L]!A]/////#[&F[###^^L]!A]///////#[&F[###^^L]!A]", 1.0f);
+    lsystem->addRule('A', "[&F[^^L]!A]/////[&F[^^L]!A]///////[&F[^^L]!A]", 1.0f);
     lsystem->addRule('F', "S/////F", 1.0f);
-    lsystem->addRule('S', "F[###^^L]", 1.0f);
+    lsystem->addRule('S', "F[^^L]", 1.0f);
     lsystem->addRule('[', "[", 1.0f);
     lsystem->addRule(']', "]", 1.0f);
     lsystem->addRule('L', "L", 1.0f);
@@ -191,17 +191,24 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     lsystem->addRule('^', "^", 1.0f);
     lsystem->addRule('/', "/", 1.0f);
     lsystem->addRule('!', "!", 1.0f);
-    lsystem->addRule('#', "#", 1.0f);
-    */
+    
+    /*
     lsystem->addRule('X', "FFFF!A", 1.0f);
     lsystem->addRule('A', "FA", 0.6f);
-    //lsystem->addRule('A', "F[!!^F/L][!!&F\\L]FA", 0.2f);
     lsystem->addRule('A', "F[!!+F/L][!!-F\\L]FA", 0.4f);
     lsystem->addRule('L', "!F/[+/L][-\\L]/A", 1.0f);
-    //lsystem->addRule('F', "F+^F", 1.0f);
 	lsystem->setAxiom("X");
-    lsystem->loadProductionsBuffer();
-    lsystem->iterate(iterations);
+    */
+
+    auto begin = chrono::steady_clock::now();
+    lsystem->iterateParallel(iterations);
+    auto end = chrono::steady_clock::now();
+    std::cout << "time elapsed iterating " << iterations << " times: " << getMilliseconds(begin, end) << "\n"; 
+    GLint bufferSize;
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lsystem->inputBuffer);
+    glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &bufferSize);
+    cout << "string size: " << bufferSize / sizeof(uint) << "\n";
+
 
 	turtle = new Turtle(initialWidth, widthDecay, PI * branchAngle / 180);
 	turtle->buildGPU(lsystem->inputBuffer, 6);

@@ -16,9 +16,6 @@ void Lsystem::setAxiom(string s) {
 }
 
 void Lsystem::iterate(int n) {
-    auto begin = chrono::steady_clock::now();
-    
-
     for (int j = 0; j < n; j++) {
         string newProduct = "";
         for (int i = 0; i < product.length(); ++i) {
@@ -53,9 +50,6 @@ void Lsystem::iterate(int n) {
     glCreateBuffers(1, &inputBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, inputBuffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, stringSize * sizeof(uint32_t), uintString.data(), GL_STATIC_DRAW);
-     
-    auto end = chrono::steady_clock::now();
-    std::cout << "time elapsed iterate cpu " << n << " times: " << getMilliseconds(begin, end) << "\n"; 
 }
 
 void Lsystem::loadProductionsBuffer() {
@@ -116,7 +110,7 @@ void Lsystem::swapBuffers() {
 }
 
 void Lsystem::iterateParallel(int n) {
-    auto begin = chrono::steady_clock::now();
+    
     vector<uint> uintString;
     for (char c : product) uintString.push_back(c);
     int stringSize = uintString.size();
@@ -129,14 +123,16 @@ void Lsystem::iterateParallel(int n) {
     GLuint stringAssignShader = loadComputeShader("shaders/compute/stringassign.glsl");
     GLuint sumShader = loadComputeShader("shaders/compute/scansum.glsl");
     GLuint productShader = loadComputeShader("shaders/compute/genproduct.glsl");
+    GLuint bigsumShader = loadComputeShader("shaders/compute/scansumsum.glsl");
     
     //copy string into input buffer
+    int bufferSize = (stringSize / 1024 + 1) * 1024;
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, inputBuffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, stringSize * sizeof(uint), uintString.data(), GL_DYNAMIC_DRAW);
 
     for (int i = 0; i < n; i++) {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, outputBuffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, 2 * stringSize * sizeof(uint), nullptr, GL_DYNAMIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize * 2 * sizeof(uint), nullptr, GL_DYNAMIC_DRAW);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, inputBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, outputBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, productionsBuffer);
@@ -144,15 +140,49 @@ void Lsystem::iterateParallel(int n) {
         glDispatchCompute(stringSize / 32 + 1, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
+        /*
+        //print
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, outputBuffer);
+        vector<uint> bufferdata;
+        bufferdata.resize(2 * stringSize);
+        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 2 * stringSize * sizeof(uint), bufferdata.data());
+        cout << "string assign output: \n";
+        for (uint c : bufferdata) {
+            cout << c << ", ";
+        } 
+        cout << "\n";
+        */
+
         //scansum
         swapBuffers();
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, inputBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, outputBuffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, 2 * stringSize * sizeof(uint), NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize * 2 * sizeof(uint), NULL, GL_DYNAMIC_DRAW);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, outputBuffer);
         glUseProgram(sumShader);
-        glDispatchCompute(stringSize / 1024 + 1, 1, 1);
+        uint numGroups = stringSize / 1024 + 1;
+        glDispatchCompute(numGroups, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        if (numGroups > 1) {
+            swapBuffers();
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, inputBuffer);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, outputBuffer);
+            glUseProgram(bigsumShader);
+            glDispatchCompute(numGroups - 1, 1, 1);
+            glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        }
+        /*
+        //print
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, outputBuffer);
+        bufferdata.clear();
+        bufferdata.resize(2 * stringSize);
+        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 2 * stringSize * sizeof(uint), bufferdata.data());
+        cout << "prefix sum output: \n";
+        for (uint c : bufferdata) {
+            cout << c << ", ";
+        } 
+        cout << "\n";
+        */
 
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, outputBuffer);
         uvec2 lastBufferEntry; 
@@ -168,30 +198,35 @@ void Lsystem::iterateParallel(int n) {
         swapBuffers();
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, outputBuffer);
         glBufferData(GL_SHADER_STORAGE_BUFFER, newStringSize * sizeof(uint), NULL, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, inputBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, inputBuffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, outputBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, outputBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, productionsBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, productionsBuffer);
         glUseProgram(productShader);
-        glDispatchCompute((2 * stringSize) / 32 + 1, 1, 1);
+        glDispatchCompute(stringSize, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        
+        /*
+        //print
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, outputBuffer);
+        bufferdata.clear();
+        bufferdata.resize(newStringSize);
+        glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, newStringSize * sizeof(uint), bufferdata.data());
+        cout << "genproduct output: \n";
+        for (uint c : bufferdata) {
+            //char ch = char(c);
+            //cout << (ch == 'F');
+            cout << char(c);// << ",";
+        } 
+        cout << "\n";
+        */
+
         swapBuffers();
         stringSize = newStringSize;
+        bufferSize = (2 * stringSize / 1024 + 1) * 1024;
         std::cout << "string size after " << i + 1 << " iterations: " << stringSize << "\n";
     }
-    //printing
-    
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, inputBuffer);
-    int outputSize;
-    glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &outputSize);
-    vector<uint> testSum;
-    testSum.resize(outputSize / sizeof(uint));
-    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, outputSize, testSum.data());
-    cout << "buffer data:\n";
-    for (int i = 0; i < testSum.size(); i++) {
-        cout << ", " << char(testSum[i]);
-    }
 
-    auto end = chrono::steady_clock::now();
-    std::cout << "time elapsed iterate parallell " << n << " times: " << getMilliseconds(begin, end) << "\n"; 
 }

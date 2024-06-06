@@ -14,19 +14,20 @@ layout (local_size_x = 1024) in;
 
 layout (binding = 0) coherent readonly buffer block1
 {
-    uvec2 input_data[gl_WorkGroupSize.x];
+    uvec2 input_data[];
 };
 
 layout (binding = 1) coherent writeonly buffer block2
 {
-    uvec2 output_data[gl_WorkGroupSize.x];
+    uvec2 output_data[];
 };
 
 shared uint shared_data[gl_WorkGroupSize.x * 2];
 
 void main(void)
 {
-    uint id = gl_GlobalInvocationID.x;
+    uint id = gl_LocalInvocationID.x;
+    uint id_offset = gl_WorkGroupID.x * gl_WorkGroupSize.x;
     uint rd_id;
     uint wr_id;
     uint mask;
@@ -34,8 +35,8 @@ void main(void)
     const uint steps = uint(log2(gl_WorkGroupSize.x)) + 1;
     uint step = 0;
 
-    shared_data[id * 2] = input_data[id * 2].y;
-    shared_data[id * 2 + 1] = input_data[id * 2 + 1].y;
+    shared_data[id * 2] = input_data[id_offset + id * 2].y;
+    shared_data[id * 2 + 1] = input_data[id_offset + id * 2 + 1].y;
 
     barrier();
 
@@ -49,9 +50,11 @@ void main(void)
 
         barrier();
     }
-    output_data[id * 2].x = input_data[id * 2].x;
-    output_data[id * 2 + 1].x = input_data[id * 2 + 1].x;
+    output_data[id * 2].x = input_data[id_offset + id * 2].x;
+    output_data[id * 2 + 1].x = input_data[id_offset + id * 2 + 1].x;
 
-    output_data[id * 2].y = (id > 0) ? shared_data[id * 2 - 1] : 0;
-    output_data[id * 2 + 1].y = shared_data[id * 2];
+    output_data[id_offset + id * 2].y = (id > 0) ? shared_data[id * 2 - 1] : 0;
+    output_data[id_offset + id * 2 + 1].y = shared_data[id * 2];
+
+    
 }
