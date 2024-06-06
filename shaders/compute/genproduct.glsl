@@ -14,7 +14,7 @@ layout (binding = 1) coherent writeonly buffer block2
 
 struct Production {
     uint predecessor;
-    float proability;
+    float probability;
     uint size;
     uint successor[64]; 
 };

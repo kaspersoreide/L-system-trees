@@ -12,16 +12,29 @@ layout (binding = 1) coherent writeonly buffer block2
     uvec2 output_data[];
 };
 
+struct Production {
+    uint predecessor;
+    float probability;
+    uint size;
+    uint successor[64]; 
+};
+
+layout (binding = 2) coherent readonly buffer block3
+{
+    uint n_productions;
+    Production productions[];
+};
+
 void main() {
-    //skip the first work group as only the other ones need to add the work group sums to
-    uint g_id = gl_WorkGroupID.x + 1;
-    uint id = g_id * gl_WorkGroupSize.x + gl_LocalInvocationID.x;
-    
+    uint g_id = gl_WorkGroupID.x;
     uint sum = 0;
-    for (uint i = 1; i < g_id; i++) {
+    for (uint i = 1; i <= g_id; i++) {
         //read last entry of every workgroup and add to sum
         uint r_id = i * gl_WorkGroupSize.x - 1;
-        sum += input_data[r_id].y;
+        uint p_id = input_data[r_id].x;
+        sum += input_data[r_id].y + productions[p_id].size;
     }
-    output_data[id].y = input_data[id].y + sum;
+    uint idx = gl_GlobalInvocationID.x;
+    //output_data[idx].x = input_data[idx].x;
+    output_data[idx].y = input_data[idx].y + sum;
 }

@@ -170,14 +170,13 @@ void main() {
             case 93:    // ] pop state
                 //put leaf at end of branch
                 Models[leafIdx++] = currentState.transform;
-                currentState = stack[top--];
+                currentState = (top >= 0) ? stack[top--] : currentState;
                 
                 break;
             case 33:    // ! decrement segment width
                 currentState.width *= 0.8;
                 break;
             case 76:    // L (BIG L) make leaf
-                //todo: put leaf transform matrix into a buffer, render leaves using instancing and buffer as uniform buffer
                 Models[leafIdx++] = currentState.transform;
                 break;
             case 70:    // F (BIG F) go forward, add new node to tree, connect to parent

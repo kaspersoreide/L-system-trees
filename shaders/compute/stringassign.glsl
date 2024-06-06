@@ -15,7 +15,7 @@ layout (binding = 1) coherent writeonly buffer block1
 
 struct Production {
     uint predecessor;
-    float proability;
+    float probability;
     uint size;
     uint successor[64]; 
 };
@@ -60,11 +60,11 @@ void main() {
     float baseValue = 0.0;
     for (int i = 0; i < n_productions; i++) {
         if (productions[i].predecessor == input_data[id]) {
-            if (randomValue <= baseValue + productions[i].proability) {
+            if (randomValue <= baseValue + productions[i].probability) {
                 stringId = i;
                 break;
             }
-            baseValue += productions[i].proability;
+            baseValue += productions[i].probability;
         }
     }
     output_data[id] = uvec2(stringId, productions[stringId].size);

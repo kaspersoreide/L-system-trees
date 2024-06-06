@@ -132,7 +132,7 @@ void Lsystem::iterateParallel(int n) {
 
     for (int i = 0; i < n; i++) {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, outputBuffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize * 2 * sizeof(uint), nullptr, GL_DYNAMIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize * sizeof(uvec2), nullptr, GL_DYNAMIC_DRAW);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, inputBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, outputBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, productionsBuffer);
@@ -157,19 +157,46 @@ void Lsystem::iterateParallel(int n) {
         swapBuffers();
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, inputBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, outputBuffer);
-        glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize * 2 * sizeof(uint), NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize * sizeof(uvec2), NULL, GL_DYNAMIC_DRAW);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, outputBuffer);
         glUseProgram(sumShader);
         uint numGroups = stringSize / 1024 + 1;
         glDispatchCompute(numGroups, 1, 1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        cout << "number of work groups for prefix sum: " << numGroups << "\n";
         if (numGroups > 1) {
+            /*
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, outputBuffer);
+            vector<uvec2> bufferdata;
+            int num = 10;
+            bufferdata.resize(num);
+            glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, (1024 - num / 2) * sizeof(uvec2), num * sizeof(uvec2), bufferdata.data());
+            cout << "prefix sum sum input: \n";
+            for (uvec2 c : bufferdata) {
+                cout << c.x << ", " << c.y << " ... ";
+            } 
+            cout << "\n"; 
+            */
+
             swapBuffers();
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, inputBuffer);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, outputBuffer);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, productionsBuffer);
             glUseProgram(bigsumShader);
-            glDispatchCompute(numGroups - 1, 1, 1);
+            glDispatchCompute(numGroups, 1, 1);
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+            //print
+            /*
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, outputBuffer);
+            bufferdata.resize(num);
+            glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, (1024 - num / 2) * sizeof(uvec2), num * sizeof(uvec2), bufferdata.data());
+            cout << "prefix sum sum output: \n";
+            for (uvec2 c : bufferdata) {
+                cout << c.x << ", " << c.y << " ... ";
+            } 
+            cout << "\n"; 
+            */
         }
         /*
         //print
@@ -225,7 +252,7 @@ void Lsystem::iterateParallel(int n) {
 
         swapBuffers();
         stringSize = newStringSize;
-        bufferSize = (2 * stringSize / 1024 + 1) * 1024;
+        bufferSize = (stringSize / 1024 + 1) * 1024;
         std::cout << "string size after " << i + 1 << " iterations: " << stringSize << "\n";
     }
 
