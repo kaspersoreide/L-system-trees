@@ -28,13 +28,13 @@ layout (binding = 2) coherent readonly buffer block3
 void main() {
     uint g_id = gl_WorkGroupID.x;
     uint sum = 0;
-    for (uint i = 1; i <= g_id; i++) {
+    for (uint i = 1; i < g_id; i++) {
         //read last entry of every workgroup and add to sum
         uint r_id = i * gl_WorkGroupSize.x - 1;
         uint p_id = input_data[r_id].x;
         sum += input_data[r_id].y + productions[p_id].size;
     }
     uint idx = gl_GlobalInvocationID.x;
-    //output_data[idx].x = input_data[idx].x;
+    output_data[idx].x = input_data[idx].x;
     output_data[idx].y = input_data[idx].y + sum;
 }

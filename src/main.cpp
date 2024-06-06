@@ -44,7 +44,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 	}
 	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
 		vec3 plantingPos = vec3(playerPos.x - sinf(angles.x), 0.0f, playerPos.z - cosf(angles.x));
-		trees.push_back(Tree(plantingPos, 1.0f, 22.7f, 0.3, 0.97,5 ));
+		trees.push_back(Tree(plantingPos, 1.0f, 22.7f, 0.3, 0.97,6 ));
 	}
 	/*if (key == GLFW_KEY_E) {
 		if (action == GLFW_PRESS) camera.rot[0] = true;

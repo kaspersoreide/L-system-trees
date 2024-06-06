@@ -50,8 +50,8 @@ void main(void)
 
         barrier();
     }
-    output_data[id * 2].x = input_data[id_offset + id * 2].x;
-    output_data[id * 2 + 1].x = input_data[id_offset + id * 2 + 1].x;
+    output_data[id_offset + id * 2].x = input_data[id_offset + id * 2].x;
+    output_data[id_offset + id * 2 + 1].x = input_data[id_offset + id * 2 + 1].x;
 
     output_data[id_offset + id * 2].y = (id > 0) ? shared_data[id * 2 - 1] : 0;
     output_data[id_offset + id * 2 + 1].y = shared_data[id * 2];
