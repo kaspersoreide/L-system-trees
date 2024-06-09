@@ -180,6 +180,7 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
 	//
     lsystem = new Lsystem();
     
+    /*
     lsystem->setAxiom("A");
     lsystem->addRule('A', "[&F[^^L]!A]/////[&F[^^L]!A]///////[&F[^^L]!A]", 1.0f);
     lsystem->addRule('F', "S/////F", 1.0f);
@@ -191,19 +192,19 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     lsystem->addRule('^', "^", 1.0f);
     lsystem->addRule('/', "/", 1.0f);
     lsystem->addRule('!', "!", 1.0f);
+    */
     
-    /*
     lsystem->addRule('X', "FFFF!A", 1.0f);
     lsystem->addRule('A', "FA", 0.6f);
     lsystem->addRule('A', "F[!!+F/L][!!-F\\L]FA", 0.4f);
     lsystem->addRule('L', "!F/[+/L][-\\L]/A", 1.0f);
 	lsystem->setAxiom("X");
-    */
+    
+    //lsystem->setAxiom("FL");
+    //lsystem->addRule('L', "FL", 1.0f);
 
-    auto begin = chrono::steady_clock::now();
-    lsystem->iterateParallel(iterations);
-    auto end = chrono::steady_clock::now();
-    std::cout << "time elapsed iterating " << iterations << " times: " << getMilliseconds(begin, end) << "\n"; 
+    lsystem->iterate(iterations);
+    
     GLint bufferSize;
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, lsystem->inputBuffer);
     glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &bufferSize);
@@ -211,7 +212,7 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
 
 
 	turtle = new Turtle(initialWidth, widthDecay, PI * branchAngle / 180);
-	turtle->buildGPU(lsystem->inputBuffer, 6);
+	turtle->buildGPU(lsystem->inputBuffer, 0.7f);
     
     
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->treeBuffer);
@@ -219,8 +220,8 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     //cout << "lastIdx: " << lastIdx << "\n";
     
     //generateBoundingBoxes();
-    segmentsPerNode = 4;
-    verticesPerSegment = 6;
+    segmentsPerNode = 5;
+    verticesPerSegment = 10;
     seed = std::rand();
     generateSplines();
 

@@ -151,7 +151,7 @@ float voronoiNoise(vec2 pos) {
             } 
         }
     }
-    return nextMinValue - minValue;
+    return minValue;
 }
 
 vec3 leafMaterial(vec3 pos, int octaves) {
@@ -169,7 +169,7 @@ void main() {
     float noiseValue = 0.0;
     for (int i = 1; i < 7; i++) {
         float d = pow(2, i);
-        noiseValue += voronoiNoise(5 * d * vec2(abs(u.x), u.y)) / d;
+        noiseValue += voronoiNoise(5 * d * vec2(abs(u.x), u.y + 0.01 * seed)) / d;
     }
     //float noiseValue = voronoiNoise(5 * u);
     vec3 color0 = vec3(1.0, 1.0, 0.7);

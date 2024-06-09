@@ -44,57 +44,8 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 	}
 	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
 		vec3 plantingPos = vec3(playerPos.x - sinf(angles.x), 0.0f, playerPos.z - cosf(angles.x));
-		trees.push_back(Tree(plantingPos, 1.0f, 22.7f, 0.3, 0.97,6 ));
+		trees.push_back(Tree(plantingPos, 1.0f, 39.7f, 0.2, 0.97,8));
 	}
-	/*if (key == GLFW_KEY_E) {
-		if (action == GLFW_PRESS) camera.rot[0] = true;
-		if (action == GLFW_RELEASE) camera.rot[0] = false;
-	}
-	if (key == GLFW_KEY_Q) {
-		if (action == GLFW_PRESS) camera.rot[1] = true;
-		if (action == GLFW_RELEASE) camera.rot[1] = false;
-	}
-	if (key == GLFW_KEY_LEFT) {
-		if (action == GLFW_PRESS) camera.rot[2] = true;
-		if (action == GLFW_RELEASE) camera.rot[2] = false;
-	}
-	if (key == GLFW_KEY_RIGHT) {
-		if (action == GLFW_PRESS) camera.rot[3] = true;
-		if (action == GLFW_RELEASE) camera.rot[3] = false;
-	}
-	if (key == GLFW_KEY_UP) {
-		if (action == GLFW_PRESS) camera.rot[4] = true;
-		if (action == GLFW_RELEASE) camera.rot[4] = false;
-	}
-	if (key == GLFW_KEY_DOWN) {
-		if (action == GLFW_PRESS) camera.rot[5] = true;
-		if (action == GLFW_RELEASE) camera.rot[5] = false;
-	}
-
-	if (key == GLFW_KEY_W) {
-		if (action == GLFW_PRESS) camera.mov[0] = true;
-		if (action == GLFW_RELEASE) camera.mov[0] = false;
-	}
-	if (key == GLFW_KEY_S) {
-		if (action == GLFW_PRESS) camera.mov[1] = true;
-		if (action == GLFW_RELEASE) camera.mov[1] = false;
-	}
-	if (key == GLFW_KEY_A) {
-		if (action == GLFW_PRESS) camera.mov[2] = true;
-		if (action == GLFW_RELEASE) camera.mov[2] = false;
-	}
-	if (key == GLFW_KEY_D) {
-		if (action == GLFW_PRESS) camera.mov[3] = true;
-		if (action == GLFW_RELEASE) camera.mov[3] = false;
-	}
-	if (key == GLFW_KEY_LEFT_SHIFT) {
-		if (action == GLFW_PRESS) camera.mov[4] = true;
-		if (action == GLFW_RELEASE) camera.mov[4] = false;
-	}
-	if (key == GLFW_KEY_LEFT_CONTROL) {
-		if (action == GLFW_PRESS) camera.mov[5] = true;
-		if (action == GLFW_RELEASE) camera.mov[5] = false;
-	}*/
 }
 
 void cursorCallback(GLFWwindow* window, double xpos, double ypos) {
@@ -140,27 +91,56 @@ void movePlayer() {
 }
 
 
-void test() {
-	Lsystem lsystem;
-	lsystem.setAxiom("A");
-    lsystem.addRule('A', "[&F[^L]!A]", 1.0f);
-    lsystem.addRule('F', "S/F", 1.0f);
-    lsystem.addRule('S', "F[#L]", 1.0f);
-    lsystem.addRule('[', "[", 1.0f);
-    lsystem.addRule(']', "]", 1.0f);
-    lsystem.addRule('L', "L", 1.0f);
-    lsystem.addRule('&', "&", 1.0f);
-    lsystem.addRule('^', "^", 1.0f);
-    lsystem.addRule('/', "/", 1.0f);
-    lsystem.addRule('!', "!", 1.0f);
-    lsystem.addRule('#', "#", 1.0f);
-	lsystem.iterate(1);
-	lsystem.iterateParallel(2);
+void test(bool parallel, int iterations, int measurements) {
+	int n = measurements;
+	vector<float> times;
+	int stringSize;
+	for (int i = 0; i < n; i++) {
+		Lsystem lsystem;
+		lsystem.setAxiom("A");
+    	lsystem.addRule('A', "[&F[^^L]!A]/////[&F[^^L]!A]///////[&F[^^L]!A]", 1.0f);
+    	lsystem.addRule('F', "S/////F", 1.0f);
+    	lsystem.addRule('S', "F[^^L]", 1.0f);
+    	lsystem.addRule('[', "[", 1.0f);
+    	lsystem.addRule(']', "]", 1.0f);
+    	lsystem.addRule('L', "L", 1.0f);
+    	lsystem.addRule('&', "&", 1.0f);
+    	lsystem.addRule('^', "^", 1.0f);
+    	lsystem.addRule('/', "/", 1.0f);
+    	lsystem.addRule('!', "!", 1.0f);
+		auto begin = chrono::steady_clock::now();
+		if (parallel) {
+			lsystem.iterateParallel(iterations);
+		}
+		else {
+			lsystem.iterate(iterations);
+		}
+		auto end = chrono::steady_clock::now();
+		times.push_back(getMilliseconds(begin, end));
+		stringSize = lsystem.stringSize;
+		glFinish();
+
+	}
+	float sum = 0.0f;
+	for (float t : times) {
+		sum += t;
+	}
+	float avg = sum / n;
+	float var = 0.0f;
+	for (float t : times) {
+		var += (t - avg) * (t - avg);
+	}
+	var /= n;
+	float sd = sqrtf(var);
+    std::cout << "time elapsed iterating " << iterations << " times: " << avg << " +- " << sd << "\n"; 
+	std::cout << "string length: " << stringSize << "\n";
 }
 
 int main() {
 	init();
-	test();
+	//for (int i = 4; i <= 7; i++) {
+	//	test(true, i, 10);
+	//}
 	GLuint treeShader = loadShaders("shaders/tree/raycasting/vert.glsl", "shaders/tree/raycasting/frag.glsl");
 	GLuint leafShader = loadShaders("shaders/leaf/render/vert.glsl", "shaders/leaf/render/frag.glsl");
 	GLuint simpleTreeShader = loadShaders("shaders/tree/basic/vert.glsl", "shaders/tree/basic/frag.glsl");

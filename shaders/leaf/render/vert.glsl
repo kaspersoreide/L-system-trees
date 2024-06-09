@@ -17,7 +17,7 @@ out vec3 normal;
 out float height;
 
 void main() {
-    float leafScale = 0.8;
+    float leafScale = 0.6;
     vec4 scaledPos = vec4(leafScale * pos.xyz, 1.0);
     vec4 localPos = Models[gl_InstanceID] * scaledPos;
     height = localPos.y;

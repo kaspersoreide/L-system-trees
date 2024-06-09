@@ -13,7 +13,7 @@ public:
 
     Turtle(float initialWidth, float widthDecay, float rotationAngle);
     void build(string buildString);
-    void buildGPU(GLuint stringBuffer, int cylinderSegments);
+    void buildGPU(GLuint stringBuffer, float segmentLength);
     void pushState();
     void popState();
 

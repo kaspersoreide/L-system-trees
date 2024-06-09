@@ -37,8 +37,7 @@ layout (binding = 2) coherent writeonly buffer block2
 uniform layout (location = 0) uint stringLength;
 uniform layout (location = 1) float branchWidth;
 uniform layout (location = 2) float turnAngle;
-uniform layout (location = 3) int cylinderSegments;
-uniform layout (location = 4) float branchLength;
+uniform layout (location = 3) float branchLength;
 
 // found at https://www.neilmendoza.com/glsl-rotation-about-an-arbitrary-axis/
 // rotates counterclockwise hopefully
