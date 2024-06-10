@@ -186,7 +186,7 @@ void main() {
                 //float pull = 1.0;//- abs(dot(dir, vec3(0.0, -1.0, 0.0)));
                 //currentState.transform = translate(branchLength * dir + 0.1 * pull * currentState.width * vec3(0.0, -1.0, 0.0)) * currentState.transform;
                 uint seed = leafIdx + lastIdx + top;
-                vec3 fluctuation = 0.2 * randomVec3(seed); 
+                vec3 fluctuation = 0.1 * randomVec3(seed); 
                 vec3 axis = cross(dir, vec3(0.0, 1.0, 0.0));
                 float angle = 2 * max(dot(dir, vec3(0.0, -1.0, 0.0)), 0.0);
                 if (dot(axis, axis) > 0.001) {

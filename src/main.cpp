@@ -14,6 +14,16 @@
 #include "loadshaders.h"
 #include "tree.h"
 #include "camera.h"
+#include "test.h"
+
+GLuint treeBuildingShader;
+GLuint genLeafShader;
+GLuint generateSplinesShader;
+GLuint stringAssignShader;
+GLuint sumShader;
+GLuint productShader;
+GLuint bigsumShader;
+    
 
 GLFWwindow* window;
 //Camera camera;
@@ -44,7 +54,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 	}
 	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
 		vec3 plantingPos = vec3(playerPos.x - sinf(angles.x), 0.0f, playerPos.z - cosf(angles.x));
-		trees.push_back(Tree(plantingPos, 1.0f, 39.7f, 0.2, 0.97,8));
+		trees.push_back(Tree(plantingPos, 1.0f, 36.0f, 0.4, 0.97, 6, 0.8));
 	}
 }
 
@@ -90,82 +100,40 @@ void movePlayer() {
 	}
 }
 
-
-void test(bool parallel, int iterations, int measurements) {
-	int n = measurements;
-	vector<float> times;
-	int stringSize;
-	for (int i = 0; i < n; i++) {
-		Lsystem lsystem;
-		lsystem.setAxiom("A");
-    	lsystem.addRule('A', "[&F[^^L]!A]/////[&F[^^L]!A]///////[&F[^^L]!A]", 1.0f);
-    	lsystem.addRule('F', "S/////F", 1.0f);
-    	lsystem.addRule('S', "F[^^L]", 1.0f);
-    	lsystem.addRule('[', "[", 1.0f);
-    	lsystem.addRule(']', "]", 1.0f);
-    	lsystem.addRule('L', "L", 1.0f);
-    	lsystem.addRule('&', "&", 1.0f);
-    	lsystem.addRule('^', "^", 1.0f);
-    	lsystem.addRule('/', "/", 1.0f);
-    	lsystem.addRule('!', "!", 1.0f);
-		auto begin = chrono::steady_clock::now();
-		if (parallel) {
-			lsystem.iterateParallel(iterations);
-		}
-		else {
-			lsystem.iterate(iterations);
-		}
-		auto end = chrono::steady_clock::now();
-		times.push_back(getMilliseconds(begin, end));
-		stringSize = lsystem.stringSize;
-		glFinish();
-
-	}
-	float sum = 0.0f;
-	for (float t : times) {
-		sum += t;
-	}
-	float avg = sum / n;
-	float var = 0.0f;
-	for (float t : times) {
-		var += (t - avg) * (t - avg);
-	}
-	var /= n;
-	float sd = sqrtf(var);
-    std::cout << "time elapsed iterating " << iterations << " times: " << avg << " +- " << sd << "\n"; 
-	std::cout << "string length: " << stringSize << "\n";
-}
-
 int main() {
 	init();
-	//for (int i = 4; i <= 7; i++) {
-	//	test(true, i, 10);
-	//}
+	treeBuildingShader = loadComputeShader("shaders/compute/simpleInterpret.glsl");
+	genLeafShader = loadShaders("shaders/leaf/generate/vert.glsl", "shaders/leaf/generate/frag.glsl");
+	generateSplinesShader = loadComputeShader("shaders/compute/generatesplines.glsl");
+	stringAssignShader = loadComputeShader("shaders/compute/stringassign.glsl");
+    sumShader = loadComputeShader("shaders/compute/scansum.glsl");
+    productShader = loadComputeShader("shaders/compute/genproduct.glsl");
+    bigsumShader = loadComputeShader("shaders/compute/scansumsum.glsl");
+    
 	GLuint treeShader = loadShaders("shaders/tree/raycasting/vert.glsl", "shaders/tree/raycasting/frag.glsl");
 	GLuint leafShader = loadShaders("shaders/leaf/render/vert.glsl", "shaders/leaf/render/frag.glsl");
 	GLuint simpleTreeShader = loadShaders("shaders/tree/basic/vert.glsl", "shaders/tree/basic/frag.glsl");
 
-	//trees.push_back(Tree(vec3(0.0f, 0.0f, -8.0f), 2.0f, 22.7f, 0.2f, 0.97, 4, 0));
+	trees.push_back(Tree(vec3(0.0f, 0.0f, -8.0f), 2.0f, 22.7f, 0.2f, 0.97, 6, 0.8));
 	mat4 Projection = perspective(1.2f, 16.0f / 9, 0.1f, 1000.0f);
 	mat4 playerModel;
 
+	float times[100];
+	int counter = 0;
 	while (!glfwWindowShouldClose(window)) {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//camera.move();
 		movePlayer();
 		playerModel = translate(playerPos)
 					* rotate(angles.x, vec3(0.0, 1.0, 0.0))
 					* rotate(angles.y, vec3(1.0, 0.0, 0.0));
 
 		mat4 VP = Projection * inverse(playerModel);
-		//mat4 Model = translate(mat4(1.0f), vec3(0.0f, 0.0f, -8.0f));
-		//mat4 MVP = VP * Model;
+
 		for (Tree tree : trees) {
 			tree.render(simpleTreeShader, VP, playerPos, leafShader);
 		}
-		
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

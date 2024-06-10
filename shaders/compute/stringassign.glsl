@@ -52,14 +52,17 @@ float floatConstruct(uint m) {
 // Pseudo-random value in half-open range [0:1].
 float random(uint x) { return floatConstruct(hash(x)); }
 
+uniform layout(location = 0) uint seed;
+
 
 void main() {
     uint id = gl_GlobalInvocationID.x;
     uint stringId = 0;
-    float randomValue = random(id + input_data[id]);
+    uint charIn = input_data[id];
+    float randomValue = random(seed + id + charIn);
     float baseValue = 0.0;
     for (int i = 0; i < n_productions; i++) {
-        if (productions[i].predecessor == input_data[id]) {
+        if (productions[i].predecessor == charIn) {
             if (randomValue <= baseValue + productions[i].probability) {
                 stringId = i;
                 break;

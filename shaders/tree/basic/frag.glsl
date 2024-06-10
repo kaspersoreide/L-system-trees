@@ -147,4 +147,7 @@ void main() {
     float brightness = clamp(dot(offsetNormal, vec3(1.0, 0.0, 0.0)), 0.2, 1.0);
     vec3 color = woodMaterial(rawPos + seed, 5);
     FragColor = vec4(brightness * color, 1.0);
+    //vec3 color = vec3(.82, .82, .82);
+    //float brightness = clamp(dot(rotatedNormal, normalize(vec3(1.0, 0.5, 0.0))), 0.2, 1.0);
+    //FragColor = vec4(brightness * color, 1.0);
 }

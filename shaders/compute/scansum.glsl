@@ -27,7 +27,7 @@ shared uint shared_data[gl_WorkGroupSize.x * 2];
 void main(void)
 {
     uint id = gl_LocalInvocationID.x;
-    uint id_offset = gl_WorkGroupID.x * gl_WorkGroupSize.x;
+    uint id_offset = 2 * gl_WorkGroupID.x * gl_WorkGroupSize.x;
     uint rd_id;
     uint wr_id;
     uint mask;

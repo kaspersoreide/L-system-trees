@@ -3,6 +3,8 @@
 #include "lsystem.h"
 #include <stack>
 
+extern GLuint treeBuildingShader;
+
 class Turtle {
 public:
     struct State {
@@ -12,6 +14,7 @@ public:
     };
 
     Turtle(float initialWidth, float widthDecay, float rotationAngle);
+    ~Turtle();
     void build(string buildString);
     void buildGPU(GLuint stringBuffer, float segmentLength);
     void pushState();
@@ -19,6 +22,7 @@ public:
 
     vector<vec2> vertices; //line points for GL_LINES
     GLuint treeBuffer, boxVAO, leafModelsBuffer;
+    
 
     State state;
     stack<State> stateStack;

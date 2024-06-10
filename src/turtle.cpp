@@ -5,6 +5,7 @@ Turtle::Turtle(float initialWidth, float _widthDecay, float angle) {
     state = {vec2(0.0f, 0.0f), 1.57079632679489661923f, initialWidth};
     rotationAngle = angle;
     widthDecay = _widthDecay;
+    
 }
 
 void Turtle::pushState() {
@@ -45,7 +46,7 @@ void Turtle::build(string buildString) {
     
 
 void Turtle::buildGPU(GLuint stringBuffer, float segmentLength) {
-    GLuint treeBuildingShader = loadComputeShader("shaders/compute/simpleInterpret.glsl");
+    
     glUseProgram(treeBuildingShader);
 
     GLint bufferSize;
@@ -87,4 +88,10 @@ void Turtle::buildGPU(GLuint stringBuffer, float segmentLength) {
     }
     */
 
+}
+
+Turtle::~Turtle() {
+    glDeleteBuffers(1, &treeBuffer);
+    glDeleteBuffers(1, &boxVAO);
+    glDeleteBuffers(1, &leafModelsBuffer);
 }

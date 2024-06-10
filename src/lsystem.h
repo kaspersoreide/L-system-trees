@@ -6,6 +6,11 @@
 
 using namespace std;
 
+extern GLuint stringAssignShader;
+extern GLuint sumShader;
+extern GLuint productShader;
+extern GLuint bigsumShader;
+
 class Lsystem {
 public:
     struct Production {
@@ -27,7 +32,7 @@ public:
     void addRule(char in, string out, float probability);
     void setAxiom(string s);
     void iterate(int n);
-    void iterateParallel(int n);
+    void iterateParallel(int n, uint seed);
     void loadProductionsBuffer();
     void swapBuffers();
     

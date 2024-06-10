@@ -96,7 +96,7 @@ void Tree::generateLeafTexture() {
 		2 * sizeof(float),
 		(void*)0
 	);
-    GLuint genLeafShader = loadShaders("shaders/leaf/generate/vert.glsl", "shaders/leaf/generate/frag.glsl");
+    //GLuint genLeafShader = loadShaders("shaders/leaf/generate/vert.glsl", "shaders/leaf/generate/frag.glsl");
     glUseProgram(genLeafShader);
     glUniform1i(0, seed);
     glBindVertexArray(VAO);
@@ -114,7 +114,7 @@ void Tree::generateLeafTexture() {
 }
 
 void Tree::generateSplines() {
-    GLuint generateSplinesShader = loadComputeShader("shaders/compute/generatesplines.glsl");
+    //GLuint generateSplinesShader = loadComputeShader("shaders/compute/generatesplines.glsl");
     glUseProgram(generateSplinesShader);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->treeBuffer);
@@ -175,12 +175,14 @@ void Tree::generateBoundingBoxes() {
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
-Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth, float widthDecay, int iterations, int type) {
+Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth, float widthDecay, int iterations, float segLength) {
+    pos = position;
     Model = translate(position) * scale(mat4(1.0f), vec3(treeScale));
+    seed = std::rand();
 	//
     lsystem = new Lsystem();
     
-    /*
+    
     lsystem->setAxiom("A");
     lsystem->addRule('A', "[&F[^^L]!A]/////[&F[^^L]!A]///////[&F[^^L]!A]", 1.0f);
     lsystem->addRule('F', "S/////F", 1.0f);
@@ -192,27 +194,27 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     lsystem->addRule('^', "^", 1.0f);
     lsystem->addRule('/', "/", 1.0f);
     lsystem->addRule('!', "!", 1.0f);
-    */
     
+    /*
     lsystem->addRule('X', "FFFF!A", 1.0f);
     lsystem->addRule('A', "FA", 0.6f);
     lsystem->addRule('A', "F[!!+F/L][!!-F\\L]FA", 0.4f);
     lsystem->addRule('L', "!F/[+/L][-\\L]/A", 1.0f);
 	lsystem->setAxiom("X");
-    
+    */
     //lsystem->setAxiom("FL");
     //lsystem->addRule('L', "FL", 1.0f);
 
-    lsystem->iterate(iterations);
+    lsystem->iterateParallel(iterations, seed);
     
-    GLint bufferSize;
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lsystem->inputBuffer);
-    glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &bufferSize);
-    cout << "string size: " << bufferSize / sizeof(uint) << "\n";
+    //GLint bufferSize;
+    //glBindBuffer(GL_SHADER_STORAGE_BUFFER, lsystem->inputBuffer);
+    //glGetBufferParameteriv(GL_SHADER_STORAGE_BUFFER, GL_BUFFER_SIZE, &bufferSize);
+    //cout << "string size: " << bufferSize / sizeof(uint) << "\n";
 
 
 	turtle = new Turtle(initialWidth, widthDecay, PI * branchAngle / 180);
-	turtle->buildGPU(lsystem->inputBuffer, 0.7f);
+	turtle->buildGPU(lsystem->inputBuffer, segLength);
     
     
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, turtle->treeBuffer);
@@ -220,31 +222,18 @@ Tree::Tree(vec3 position, float treeScale, float branchAngle, float initialWidth
     //cout << "lastIdx: " << lastIdx << "\n";
     
     //generateBoundingBoxes();
-    segmentsPerNode = 5;
-    verticesPerSegment = 10;
-    seed = std::rand();
+    segmentsPerNode = 10;
+    verticesPerSegment = 15;
+    
     generateSplines();
 
     generateLeafVertexArray();
     generateLeafTexture();
     
-    //printing
-    /*
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, elementBuffer);
-    vector<uint> bufferdata;
-    bufferdata.resize(100);
-    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 100 * sizeof(uint), bufferdata.data());
-    cout << "productions buffer: \n";
-    for (uint c : bufferdata) {
-        cout << c << ", ";
-    } 
-    cout << "\n";
-    */
 }
 
 void Tree::render(GLuint shader, mat4 VP, vec3 camPos, GLuint leafShader) {
     mat4 MVP = VP * Model;
-    //mat4 ModelInv = inverse(Model);
 
     //leaves
     glBindVertexArray(leafVertexArray);
@@ -257,7 +246,7 @@ void Tree::render(GLuint shader, mat4 VP, vec3 camPos, GLuint leafShader) {
     glBindTexture(GL_TEXTURE_2D, leafTexture);
     glUniform1ui(glGetUniformLocation(leafShader, "leafTexture"), 0);
     glDrawArraysInstanced(GL_TRIANGLES, 0, leafVertexCount, lastLeafIdx + 1);
-
+    
     //tree
     glUseProgram(shader);
 	glUniformMatrix4fv(0, 1, GL_FALSE, &Model[0][0]);
